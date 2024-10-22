@@ -26,15 +26,15 @@ const SpecialEventSchema = new mongoose.Schema({
 
 // Create the SpecialEvent model
 const SpecialEvent = mongoose.model('SpecialEvent', SpecialEventSchema);
-module.exports = SpecialEvent;
+
 
 // Create the TechnicalEvent model
 const TechnicalEvent = mongoose.model('TechnicalEvent', TechnicalEventSchema);
-module.exports = TechnicalEvent;
+
 
 // Create the CulturalEvent model
 const CulturalEvent = mongoose.model('CulturalEvent', CulturalEventSchema);
-module.exports = CulturalEvent;
+
 
 
 //partcipent schema
@@ -56,7 +56,7 @@ const ParticipantSchema = new mongoose.Schema({
 
 // Create the Participant model
 const Participant = mongoose.model('Participant', ParticipantSchema);
-module.exports = Participant;
+
 
 
 //payment schema
@@ -71,4 +71,5 @@ const PaymentSchema = new mongoose.Schema({
 
 // Create the Payment model
 const Payment = mongoose.model('Payment', PaymentSchema);
-module.exports = Payment;
+
+export default { ParticipantSchema, SpecialEventSchema, TechnicalEventSchema, CulturalEventSchema, PaymentSchema }
