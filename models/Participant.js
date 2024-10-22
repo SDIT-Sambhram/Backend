@@ -3,7 +3,7 @@ import mongoose from 'mongoose';
 const ParticipantSchema = new mongoose.Schema({
    name: { type: String, required: true },
    usn: { type: String, required: true },
-   phone: { type: String, required: true, unique: true },
+   phone: { type: String, required: true },
    college: { type: String, required: true },
    registrations: [{
       event_id: { type: mongoose.Schema.Types.ObjectId, required: true },
