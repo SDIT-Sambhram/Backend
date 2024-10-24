@@ -3,7 +3,7 @@ import Participant from "../models/Participant.js";
 import QRCode from "qrcode";
 import mongoose from "mongoose";
 import { body, validationResult } from 'express-validator';
-import { createRegistrationPDF } from './pdfGeneratorController.js'; // Import the PDF generator
+import { createRegistrationImage } from './ticketGeneratorController.js'; // Import the PDF generator
 
 // Constants
 const validPaymentStatuses = ['paid', 'pending', 'failed'];
@@ -107,7 +107,7 @@ export const registerController = [
             await participant.save();
 
             // Generate the PDF
-            const pdfPath = await createRegistrationPDF(participant, registrations);
+            const pdfPath = await createRegistrationImage(participant, registrations);
 
             // Return success response with the path to the generated PDF
             return response.status(201).send({
