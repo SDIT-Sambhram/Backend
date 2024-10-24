@@ -107,13 +107,13 @@ export const registerController = [
             await participant.save();
 
             // Generate the PDF
-            const pdfPath = await createRegistrationImage(participant, registrations);
+            const imagePath = await createRegistrationImage(participant, registrations);
 
             // Return success response with the path to the generated PDF
             return response.status(201).send({
                 success: true,
                 message: 'User registered successfully',
-                pdfPath, // Include the path to the PDF
+                imagePath, // Include the path to the PDF
                 participant
             });
         } catch (error) {
