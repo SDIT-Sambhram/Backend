@@ -7,7 +7,8 @@
     "start": "node.js",
     "server": "nodemon app.js",
     "frontend": "npm start --prefix ./frontend",
-    "dev": "concurrently \"npm run server\" \"npm run frontend\""
+    "dev": "concurrently \"npm run server\" \"npm run frontend\"",
+    "test": "jest"
   },
   "author": "",
   "license": "ISC",
@@ -19,8 +20,20 @@
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.21.1",
-    "mongoose": "^8.7.1",
+    "express-validator": "^7.2.0",
+    "fs": "^0.0.1-security",
     "morgan": "^1.10.0",
-    "nodemon": "^3.1.7"
+    "node-mocks-http": "^1.16.1",
+    "nodemon": "^3.1.7",
+    "pdfkit": "^0.15.0",
+    "qrcode": "^1.5.4"
+  },
+  "devDependencies": {
+    "@babel/preset-env": "^7.25.9",
+    "babel-jest": "^29.7.0",
+    "jest": "^29.7.0",
+    "mongodb-memory-server": "^10.1.2",
+    "mongoose": "^8.7.2",
+    "supertest": "^7.0.0"
   }
 }
