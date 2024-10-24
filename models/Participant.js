@@ -7,8 +7,6 @@ const ParticipantSchema = new mongoose.Schema({
    college: { type: String, required: true },
    registrations: [{
       event_id: { type: mongoose.Schema.Types.ObjectId, required: true },
-      is_team_event: { type: Boolean, required: true },
-      team_members: { type: [String], default: [] },
       qr_code: { type: String, required: true },
       payment_status: { type: String, enum: ['paid', 'pending', 'failed'], required: true },
       razorpay_payment_id: { type: String, required: true },
@@ -17,5 +15,5 @@ const ParticipantSchema = new mongoose.Schema({
 });
 
 // Export the model
-const Participant = mongoose.model.Participant||mongoose.model('Participant', ParticipantSchema);
+const Participant = mongoose.model.Participant || mongoose.model('Participant', ParticipantSchema);
 export default Participant;  // Use default export
