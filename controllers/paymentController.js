@@ -1,4 +1,4 @@
-import razorpayInstance from "../configs/razorpay";
+import razorpayInstance from "../configs/razorpay.js";
 import crypto from "crypto";
 
 // Create an order
@@ -10,13 +10,12 @@ export const createOrder = async (amount) => {
             receipt: `receipt_order_${Date.now()}`
         });
 
-        res.json({
+        return {
             success: true,
-            key: process.env.RAZORPAY_KEY_ID,
             amount: order.amount,
             currency: order.currency,
             orderId: order.id
-        });
+        };
         
 
     } catch (error) {
