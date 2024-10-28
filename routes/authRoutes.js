@@ -12,4 +12,5 @@ router.post('/payment/verify', verifyAndRegisterParticipant);
 router.get('/events', getAllEventDetails);
 
 
+
 export default router;

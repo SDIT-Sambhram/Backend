@@ -11,9 +11,7 @@ const getAllEventDetails = async (req, res) => {
         // Fetch all events
         const events = await Event.find().lean();  // `lean()` for faster read-only operations
 
-        console.log("All Event Details:", events);
-
-        res.status(200).json(events)  // Send the events as JSON response
+        res.status(200).send(events)// Send the events as JSON response
         
         return events;  // Return the events if needed for further use
     } catch (error) {
@@ -21,6 +19,7 @@ const getAllEventDetails = async (req, res) => {
     } finally {
         // Close the connection when done
         mongoose.connection.close();
+
     }
 };
 

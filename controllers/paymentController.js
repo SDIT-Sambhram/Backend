@@ -10,12 +10,8 @@ export const createOrder = async (amount) => {
             receipt: `receipt_order_${Date.now()}`
         });
 
-        return {
-            success: true,
-            amount: order.amount,
-            currency: order.currency,
-            orderId: order.id
-        };
+        console.log("Razorpay order created:", order);
+        return order;
         
 
     } catch (error) {

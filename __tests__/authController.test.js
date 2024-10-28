@@ -193,6 +193,29 @@ describe('verifyAndRegisterParticipant', () => {
         jest.clearAllMocks(); // Clear mock history after each test
     });
 
+    it('should return error for missing razorpay_payment_id', async () => {
+        const req = mockRequest({
+            razorpay_order_id: 'order_id_example',
+            razorpay_signature: 'signature_example',
+            name: 'John Doe',
+            usn: 'CS123',
+            phone: '9876543210',
+            college: 'Example University',
+            registrations: [{ event_id: new mongoose.Types.ObjectId() }],
+        });
+    
+        const res = mockResponse();
+        verifyPayment.mockReturnValue(true);
+    
+        await verifyAndRegisterParticipant(req, res);
+    
+        expect(res.status).toHaveBeenCalledWith(400);
+        expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+            message: 'razorpay_payment_id is required',
+        }));
+    });
+    
+
     it('should return error for invalid payment signature', async () => {
         const req = mockRequest({
             razorpay_payment_id: 'payment_id_example',
