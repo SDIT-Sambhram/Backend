@@ -1,368 +1,173 @@
-import mongoose from 'mongoose';
-import { registerController, verifyAndRegisterParticipant } from '../controllers/registrationController';
-import Participant from '../models/Participant';
-import { createOrder, verifyPayment } from '../controllers/paymentController';
-import { generateQRCode } from '../helpers/qrCodeGenerator';
-import { validationResult } from 'express-validator';
+import mongoose from "mongoose";
+import request from "supertest";
+import { createRegistration, registerParticipant } from "../controllers/registrationController.js";
+import app from "../app"; // Your Express app
+import Participant from "../models/Participant.js";
 
-// Mocking dependencies
-jest.mock('../models/Participant');
-jest.mock('../controllers/paymentController');
-jest.mock('../helpers/qrCodeGenerator');
+// Mock Participant model
+jest.mock("../models/Participant.js");
+jest.mock("../controllers/paymentController.js", () => ({
+    createOrder: jest.fn().mockResolvedValue({ id: "order123", amount: 100, currency: "INR", key: "testKey" }),
+}));
 
-const mockRequest = (body) => ({
-    body,
+beforeEach(async () => {
+    jest.clearAllMocks();
+    await mongoose.connect("mongodb://localhost:27017/test", { useNewUrlParser: true, useUnifiedTopology: true });
 });
 
-const mockResponse = () => {
-    const res = {};
-    res.status = jest.fn().mockReturnValue(res);
-    res.send = jest.fn().mockReturnValue(res);
-    res.json = jest.fn().mockReturnValue(res);
-    return res;
-};
-
-describe('registerController', () => {
-    afterEach(() => {
-        jest.clearAllMocks(); // Clear mock history after each test
-    });
-
-    it('should return error for exceeding event registration limit', async () => {
-        const req = mockRequest({
-            name: 'John Doe',
-            usn: 'CS123',
-            phone: '9876543210',
-            college: 'Example University',
-            registrations: [
-                { event_id: new mongoose.Types.ObjectId() },
-                { event_id: new mongoose.Types.ObjectId() },
-                { event_id: new mongoose.Types.ObjectId() },
-                { event_id: new mongoose.Types.ObjectId() },
-                { event_id: new mongoose.Types.ObjectId() }, // 5th event
-            ],
-            amount: 1000,
-        });
-
-        const res = mockResponse();
-
-        validationResult.mockReturnValue({ isEmpty: () => true });
-        Participant.findOne.mockResolvedValue(null); // No existing participant
-
-        await registerController[2](req, res); // Call the controller
-
-        expect(res.status).toHaveBeenCalledWith(400);
-        expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
-            message: 'User can register for up to 4 unique events',
-        }));
-    });
-
-    it('should return error for missing required fields', async () => {
-        const req = mockRequest({
-            usn: 'CS123',
-            phone: '', // Invalid phone
-            college: '',
-            registrations: [],
-        });
-
-        const res = mockResponse();
-
-        validationResult.mockReturnValue({
-            isEmpty: () => false, // Indicates validation errors
-            array: () => [{ msg: 'Name is required' }, { msg: 'Phone number is required' }],
-        });
-
-        await registerController[2](req, res); // Call the controller
-
-        expect(res.status).toHaveBeenCalledWith(400);
-        expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
-            errors: expect.any(Array),
-        }));
-    });
-
-    it('should return error for invalid phone number format', async () => {
-        const req = mockRequest({
-            name: 'John Doe',
-            usn: 'CS123',
-            phone: 'invalid-phone', // Invalid phone format
-            college: 'Example University',
-            registrations: [],
-            amount: 1000,
-        });
-
-        const res = mockResponse();
-
-        validationResult.mockReturnValue({ isEmpty: () => false, array: () => [{ msg: 'Phone number must be valid.' }] });
-
-        await registerController[2](req, res); // Call the controller
-
-        expect(res.status).toHaveBeenCalledWith(400);
-        expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
-            errors: expect.any(Array),
-        }));
-    });
-
-    it('should successfully register a new participant', async () => {
-        const req = mockRequest({
-            name: 'John Doe',
-            usn: 'CS123',
-            phone: '9876543210',
-            college: 'Example University',
-            registrations: [
-                {
-                    event_id: new mongoose.Types.ObjectId(),
-                    payment_status: 'paid',
-                    razorpay_payment_id: 'payment_id_example',
-                },
-            ],
-            amount: 1000,
-        });
-
-        const res = mockResponse();
-
-        validationResult.mockReturnValue({ isEmpty: () => true });
-        Participant.findOne.mockResolvedValue(null); // No existing participant
-        createOrder.mockResolvedValue({ id: 'order_id_example', amount: 1000, currency: 'INR' });
-
-        await registerController[2](req, res); // Call the controller
-
-        expect(res.status).toHaveBeenCalledWith(200);
-        expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
-            success: true,
-            orderId: 'order_id_example',
-            amount: 1000,
-            currency: 'INR',
-        }));
-    });
-
-    it('should return validation errors', async () => {
-        const req = mockRequest({
-            name: '', // Invalid name
-            usn: '',
-            phone: '',
-            college: '',
-            registrations: [],
-        });
-
-        const res = mockResponse();
-
-        validationResult.mockReturnValue({
-            isEmpty: () => false, // Indicates validation errors
-            array: () => [{ msg: 'Validation error' }],
-        });
-
-        await registerController[2](req, res); // Call the controller
-
-        expect(res.status).toHaveBeenCalledWith(400);
-        expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
-            errors: expect.any(Array),
-        }));
-    });
-
-    it('should return internal server error', async () => {
-        const req = mockRequest({
-            name: 'John Doe',
-            usn: 'CS123',
-            phone: '9876543210',
-            college: 'Example University',
-            registrations: [
-                {
-                    event_id: new mongoose.Types.ObjectId(),
-                    payment_status: 'paid',
-                    razorpay_payment_id: 'payment_id_example',
-                },
-            ],
-            amount: 1000,
-        });
-
-        const res = mockResponse();
-
-        validationResult.mockReturnValue({ isEmpty: () => true });
-        Participant.findOne.mockRejectedValue(new Error('Database error')); // Simulate DB error
-
-        await registerController[2](req, res); // Call the controller
-
-        expect(res.status).toHaveBeenCalledWith(500);
-        expect(res.send).toHaveBeenCalledWith(expect.objectContaining({
-            message: 'Internal Server Error',
-        }));
-    });
+afterEach(async () => {
+    await mongoose.connection.dropDatabase();
+    await mongoose.connection.close();
 });
 
-describe('verifyAndRegisterParticipant', () => {
-    afterEach(() => {
-        jest.clearAllMocks(); // Clear mock history after each test
-    });
-
-    it('should return error for missing razorpay_payment_id', async () => {
-        const req = mockRequest({
-            razorpay_order_id: 'order_id_example',
-            razorpay_signature: 'signature_example',
-            name: 'John Doe',
-            usn: 'CS123',
-            phone: '9876543210',
-            college: 'Example University',
-            registrations: [{ event_id: new mongoose.Types.ObjectId() }],
-        });
-    
-        const res = mockResponse();
-        verifyPayment.mockReturnValue(true);
-    
-        await verifyAndRegisterParticipant(req, res);
-    
-        expect(res.status).toHaveBeenCalledWith(400);
-        expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
-            message: 'razorpay_payment_id is required',
-        }));
-    });
-    
-
-    it('should return error for invalid payment signature', async () => {
-        const req = mockRequest({
-            razorpay_payment_id: 'payment_id_example',
-            razorpay_order_id: 'order_id_example',
-            razorpay_signature: 'invalid_signature',
-            name: 'John Doe',
-            usn: 'CS123',
-            phone: '9876543210',
-            college: 'Example University',
-            registrations: [
-                {
-                    event_id: new mongoose.Types.ObjectId(),
-                },
-            ],
-        });
-
-        const res = mockResponse();
-
-        verifyPayment.mockReturnValue(false);
-
-        await verifyAndRegisterParticipant(req, res); // Call the controller
-
-        expect(res.status).toHaveBeenCalledWith(400);
-        expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
-            message: 'Payment verification failed',
-        }));
-    });
-
-    it('should return error when participant saving fails', async () => {
-        const req = mockRequest({
-            razorpay_payment_id: 'payment_id_example',
-            razorpay_order_id: 'order_id_example',
-            razorpay_signature: 'signature_example',
-            name: 'John Doe',
-            usn: 'CS123',
-            phone: '9876543210',
-            college: 'Example University',
-            registrations: [
-                {
-                    event_id: new mongoose.Types.ObjectId(),
-                },
-            ],
-        });
-
-        const res = mockResponse();
-
-        verifyPayment.mockReturnValue(true);
+describe("Participant Registration", () => {
+    test("should create registration successfully for a new participant", async () => {
         Participant.findOne.mockResolvedValue(null); // No existing participant
-        generateQRCode.mockResolvedValue('mocked-qr-code-data');
-        Participant.prototype.save.mockRejectedValue(new Error('Save failed')); // Simulate save error
+        const response = await request(app)
+            .post("/api/registration") // Adjust your endpoint
+            .send({
+                name: "John Doe",
+                usn: "USN123",
+                phone: "1234567890",
+                college: "XYZ College",
+                registrations: [{ event_id: "event1" }],
+                amount: 100,
+            });
 
-        await verifyAndRegisterParticipant(req, res); // Call the controller
-
-        expect(res.status).toHaveBeenCalledWith(500);
-        expect(res.send).toHaveBeenCalledWith(expect.objectContaining({
-            message: 'Internal Server Error',
-        }));
+        expect(response.status).toBe(200);
+        expect(response.body.success).toBe(true);
+        expect(response.body.orderId).toBeDefined();
     });
 
-    it('should successfully verify payment and register participant', async () => {
-        const req = mockRequest({
-            razorpay_payment_id: 'payment_id_example',
-            razorpay_order_id: 'order_id_example',
-            razorpay_signature: 'signature_example',
-            name: 'John Doe',
-            usn: 'CS123',
-            phone: '9876543210',
-            college: 'Example University',
-            registrations: [
-                {
-                    event_id: new mongoose.Types.ObjectId(),
-                },
-            ],
-        });
+    test("should fail registration when participant already registered for max events", async () => {
+        Participant.findOne.mockResolvedValue({
+            registrations: [{ event_id: "event1" }, { event_id: "event2" }, { event_id: "event3" }, { event_id: "event4" }]
+        }); // Existing participant with max events
 
-        const res = mockResponse();
+        const response = await request(app)
+            .post("/api/registration") // Adjust your endpoint
+            .send({
+                name: "John Doe",
+                usn: "USN123",
+                phone: "1234567890",
+                college: "XYZ College",
+                registrations: [{ event_id: "event5" }],
+                amount: 100,
+            });
 
-        verifyPayment.mockReturnValue(true);
+        expect(response.status).toBe(400);
+        expect(response.body.message).toBe("User can register for up to 4 unique events");
+    });
+
+    test("should register participant successfully after payment confirmation", async () => {
         Participant.findOne.mockResolvedValue(null); // No existing participant
-        generateQRCode.mockResolvedValue('mocked-qr-code-data');
-        Participant.prototype.save.mockResolvedValue(req.body); // Mock save
+        const registrationResponse = await request(app)
+            .post("/api/registration")
+            .send({
+                name: "John Doe",
+                usn: "USN123",
+                phone: "1234567890",
+                college: "XYZ College",
+                registrations: [{ event_id: "event1" }],
+                amount: 100,
+            });
 
-        await verifyAndRegisterParticipant(req, res); // Call the controller
+        // Now register the participant
+        const response = await request(app)
+            .post("/api/register")
+            .send({
+                name: "John Doe",
+                usn: "USN123",
+                phone: "1234567890",
+                college: "XYZ College",
+                registrations: [{ event_id: "event1", order_id: registrationResponse.body.orderId }],
+            });
 
-        expect(res.status).toHaveBeenCalledWith(201);
-        expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
-            success: true,
-            message: 'User registered successfully',
-        }));
+        expect(response.status).toBe(201);
+        expect(response.body.success).toBe(true);
+        expect(response.body.participant).toHaveProperty("_id");
+        expect(response.body.participant.name).toBe("John Doe");
     });
 
-    it('should return error for failed payment verification', async () => {
-        const req = mockRequest({
-            razorpay_payment_id: 'payment_id_example',
-            razorpay_order_id: 'order_id_example',
-            razorpay_signature: 'signature_example',
-            name: 'John Doe',
-            usn: 'CS123',
-            phone: '9876543210',
-            college: 'Example University',
-            registrations: [
-                {
-                    event_id: new mongoose.Types.ObjectId(),
-                },
-            ],
-        });
+    test("should fail to register participant if missing required fields", async () => {
+        const response = await request(app)
+            .post("/api/register") // Adjust your endpoint
+            .send({}); // Missing all fields
 
-        const res = mockResponse();
-
-        verifyPayment.mockReturnValue(false);
-
-        await verifyAndRegisterParticipant(req, res); // Call the controller
-
-        expect(res.status).toHaveBeenCalledWith(400);
-        expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
-            message: 'Payment verification failed',
-        }));
+        expect(response.status).toBe(400);
+        expect(response.body.message).toBe("Missing required fields");
     });
 
-    it('should return internal server error', async () => {
-        const req = mockRequest({
-            razorpay_payment_id: 'payment_id_example',
-            razorpay_order_id: 'order_id_example',
-            razorpay_signature: 'signature_example',
-            name: 'John Doe',
-            usn: 'CS123',
-            phone: '9876543210',
-            college: 'Example University',
-            registrations: [
-                {
-                    event_id: new mongoose.Types.ObjectId(),
-                },
-            ],
-        });
+    test("should not allow registration for already registered events", async () => {
+        const existingParticipant = {
+            registrations: [{ event_id: "event1" }],
+        };
+        Participant.findOne.mockResolvedValue(existingParticipant);
 
-        const res = mockResponse();
+        const response = await request(app)
+            .post("/api/register") // Adjust your endpoint
+            .send({
+                name: "Jane Doe",
+                usn: "USN124",
+                phone: "1234567890",
+                college: "XYZ College",
+                registrations: [{ event_id: "event1" }], // Already registered
+            });
 
-        verifyPayment.mockReturnValue(true);
-        Participant.findOne.mockRejectedValue(new Error('Database error')); // Simulate DB error
+        expect(response.status).toBe(400);
+        expect(response.body.message).toBe("User has already registered for one or more events");
+    });
 
-        await verifyAndRegisterParticipant(req, res); // Call the controller
+    test("should fail if input validation fails", async () => {
+        const response = await request(app)
+            .post("/api/registration")
+            .send({
+                usn: "USN123", // Missing name
+                phone: "1234567890",
+                college: "XYZ College",
+                registrations: [{ event_id: "event1" }],
+                amount: 100,
+            });
 
-        expect(res.status).toHaveBeenCalledWith(500);
-        expect(res.send).toHaveBeenCalledWith(expect.objectContaining({
-            message: 'Internal Server Error',
-        }));
+        expect(response.status).toBe(400);
+        expect(response.body.errors).toEqual(expect.arrayContaining([
+            expect.objectContaining({ msg: "Name is required" })
+        ]));
+    });
+
+    test("should fail if phone number is invalid", async () => {
+        const response = await request(app)
+            .post("/api/registration")
+            .send({
+                name: "John Doe",
+                usn: "USN123",
+                phone: "abcde", // Invalid phone
+                college: "XYZ College",
+                registrations: [{ event_id: "event1" }],
+                amount: 100,
+            });
+
+        expect(response.status).toBe(400);
+        expect(response.body.errors).toEqual(expect.arrayContaining([
+            expect.objectContaining({ msg: "Phone number must be numeric" })
+        ]));
+    });
+
+    test("should fail if no registrations are provided", async () => {
+        const response = await request(app)
+            .post("/api/registration")
+            .send({
+                name: "John Doe",
+                usn: "USN123",
+                phone: "1234567890",
+                college: "XYZ College",
+                registrations: [], // No registrations
+                amount: 100,
+            });
+
+        expect(response.status).toBe(400);
+        expect(response.body.errors).toEqual(expect.arrayContaining([
+            expect.objectContaining({ msg: "At least one registration is required" })
+        ]));
     });
 });
-
-

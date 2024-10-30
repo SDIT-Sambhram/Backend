@@ -1,102 +1,99 @@
 import Participant from "../models/Participant.js";
 import mongoose from "mongoose";
 import { validationResult } from 'express-validator';
-import { createOrder, verifyPayment } from "../controllers/paymentController.js";
-import { generateQRCode } from "../helpers/qrCodeGenerator.js";
+import { createOrder } from "../controllers/paymentController.js";
 import registrationLimiter from '../middlewares/rateLimiter.js';
 import { validateInputs } from '../helpers/validation.js';
-import connectDB from "../configs/db.js";
 
+const MAX_EVENTS = 4;
 
-export const registerController = [
-    registrationLimiter,
-    validateInputs,
-    async (req, res) => {
+// Helper function to check event registration limits
+const canRegisterForEvents = (participant, newRegistrations) => {
+    const existingEventIds = new Set(participant.registrations.map(reg => reg.event_id.toString()));
+    if (participant.registrations.length + newRegistrations.length > MAX_EVENTS) return { canRegister: false, message: 'User can register for up to 4 unique events' };
+    if (newRegistrations.some(reg => existingEventIds.has(reg.event_id.toString()))) return { canRegister: false, message: 'User has already registered for one or more events' };
+    return { canRegister: true };
+};
+
+// Controller to handle registration requests
+export const createRegistration = [
+    registrationLimiter, // Middleware to limit registration requests
+    validateInputs, // Middleware to validate input data
+    async (req, res, next) => {
         try {
             const errors = validationResult(req);
             if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
 
-            await connectDB();
+            const { phone, registrations, amount } = req.body;
 
-            console.log(req.body);
-
-            const { name, usn, phone, college, registrations, amount } = req.body;
-
+            // Check if participant already exists
             const participant = await Participant.findOne({ phone });
 
             if (participant) {
-                const existingEventIds = new Set(participant.registrations.map(reg => reg.event_id.toString()));
-                if (participant.registrations.length >= 4) {
-                    return res.status(400).json({ message: 'User can register for up to 4 unique events' });
-                }
-                if (registrations.some(reg => existingEventIds.has(reg.event_id.toString()))) {
-                    return res.status(400).json({ message: 'User has already registered for one or more events' });
-                }
-            } else {
-                if (registrations.length > 4) {
-                    return res.status(400).json({ message: 'User can register for up to 4 unique events' });
-                }
+                // Check if participant can register for the new events
+                const { canRegister, message } = canRegisterForEvents(participant, registrations);
+                if (!canRegister) return res.status(400).json({ message });
+            } else if (registrations.length > MAX_EVENTS) {
+                return res.status(400).json({ message: 'User can register for up to 4 unique events' });
             }
 
+            // Create a new order for the registration
             const order = await createOrder(amount);
-            console.log(order)
             if (!order) return res.status(500).json({ message: 'Order creation failed' });
 
+            // Respond with order details
             res.status(200).json({ success: true, orderId: order.id, amount: order.amount, currency: order.currency, key: order.key });
         } catch (error) {
             console.log('Error during registration:', error);
-            res.status(500).send({ message: 'Internal Server Error', error: error.message });
+            next(error);
         }
     }
 ];
 
-export const verifyAndRegisterParticipant = async (req, res) => {
+// Controller to verify and register participant after payment
+export const registerParticipant = async (req, res, next) => {
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
     try {
-        const { razorpay_payment_id, razorpay_order_id, razorpay_signature, name, usn, phone, college, registrations } = req.body;
+        const { name, usn, phone, college, registrations } = req.body;
 
-        console.log(req.body);
-
-        // Check for missing fields
-        if (!razorpay_payment_id || !razorpay_order_id || !razorpay_signature || !name || !usn || !phone || !college || !registrations || registrations.length === 0) {
+        // Validate required fields
+        if (!name || !usn || !phone || !college || !registrations || registrations.length === 0) {
             return res.status(400).json({ message: "Missing required fields" });
         }
 
-        // Verify payment
-        if (!verifyPayment(razorpay_order_id, razorpay_payment_id, razorpay_signature)) {
-            return res.status(400).json({ message: "Payment verification failed" });
-        }
+        // Check if participant already exists
+        let participant = await Participant.findOne({ phone }).session(session);
+        const isNewParticipant = !participant;
 
-        let participant = await Participant.findOne({ phone });
-        const qrCode = await generateQRCode(participant ? participant._id : new mongoose.Types.ObjectId());
-
+        // Prepare new registrations
         const newRegistrations = registrations.map(reg => ({
             event_id: reg.event_id,
-            qr_code: qrCode,
-            payment_status: 'paid',
-            razorpay_payment_id,
+            qr_code: 'pending',
+            payment_status: 'pending',
+            order_id: reg.order_id,
             registration_date: new Date()
         }));
 
-        if (!participant) {
+        if (isNewParticipant) {
+            // Create a new participant
             participant = new Participant({ name, usn, phone, college, registrations: newRegistrations });
         } else {
-            const existingEventIds = new Set(participant.registrations.map(reg => reg.event_id.toString()));
-            if (participant.registrations.length + newRegistrations.length > 4) {
-                return res.status(400).json({ message: 'User can register for up to 4 unique events' });
-            }
-            if (newRegistrations.some(reg => existingEventIds.has(reg.event_id.toString()))) {
-                return res.status(400).json({ message: 'User has already registered for one or more events' });
-            }
+            // Check if participant can register for the new events
+            const { canRegister, message } = canRegisterForEvents(participant, newRegistrations);
+            if (!canRegister) return res.status(400).json({ message });
             participant.registrations.push(...newRegistrations);
         }
 
-        await participant.save();
+        // Save participant data in the session
+        await participant.save({ session });
+        await session.commitTransaction();
 
-        const ticketUrl = `http://frontend-url/ticket/${qrCode}`;
+        // Respond with success message and participant details
         res.status(201).json({
             success: true,
-            message: 'User registered successfully',
-            redirectUrl: ticketUrl,
+            message: 'User registered successfully, awaiting payment confirmation',
             participant: {
                 _id: participant._id,
                 name: participant.name,
@@ -107,7 +104,10 @@ export const verifyAndRegisterParticipant = async (req, res) => {
             }
         });
     } catch (error) {
-        console.log('Error during payment verification and registration:', error);
-        res.status(500).send({ message: 'Internal Server Error', error: error.message });
+        await session.abortTransaction();
+        console.log('Error during registration:', error);
+        next(error);
+    } finally {
+        session.endSession();
     }
 };
