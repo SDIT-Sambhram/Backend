@@ -4,7 +4,7 @@ import { generateQRCode } from '../helpers/qrCodeGenerator.js';
 import mongoose from 'mongoose';
 
 export const razorpayWebhook = async (req, res) => {
-    const secret = 'your_webhook_secret';
+    const secret = process.env.RAZORPAY_WEBHOOK_SECRET;
 
     const shasum = crypto.createHmac('sha256', secret);
     shasum.update(JSON.stringify(req.body));
