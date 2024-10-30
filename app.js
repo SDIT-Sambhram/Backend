@@ -32,6 +32,6 @@ app.get('/', (request, response) => {
 
 const PORT = process.env.PORT || 8081;
 1
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0',() => {
     console.log(`Server Running on ${PORT}`.bgCyan.white);
 })

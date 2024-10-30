@@ -9,8 +9,8 @@ const ParticipantSchema = new mongoose.Schema({
       event_id: { type: mongoose.Schema.Types.ObjectId, required: true },
       qr_code: { type: String, required: true },
       payment_status: { type: String, enum: ['paid', 'pending', 'failed'], required: true },
-      razorpay_payment_id: { type: String, required: true },
-      registration_date: { type: Date, default: Date.now }
+      order_id: { type: String, required: true },
+      registration_date: { type: Date, default: Date.now },
    }]
 }, {
    timestamps: true, // Adds createdAt and updatedAt fields
