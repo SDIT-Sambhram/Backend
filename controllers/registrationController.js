@@ -10,8 +10,9 @@ const MAX_EVENTS = 4;
 // Helper function to check event registration limits
 const canRegisterForEvents = (participant, newRegistrations) => {
     const existingEventIds = new Set(participant.registrations.map(reg => reg.event_id.toString()));
-    if (participant.registrations.length + newRegistrations.length > MAX_EVENTS) return { canRegister: false, message: 'User can register for up to 4 unique events' };
-    if (newRegistrations.some(reg => existingEventIds.has(reg.event_id.toString()))) return { canRegister: false, message: 'User has already registered for one or more events' };
+    if (participant.registrations.length >= MAX_EVENTS) return { canRegister: false, message: `User can register for up to ${MAX_EVENTS} unique events` };
+    const conflictingEventIds = newRegistrations.filter(reg => existingEventIds.has(reg.event_id.toString())).map(reg => reg.event_id.toString());
+    if (conflictingEventIds.length > 0) return { canRegister: false, message: `User has already registered for the following events: ${conflictingEventIds.join(', ')}` };
     return { canRegister: true };
 };
 
@@ -23,10 +24,8 @@ export const createRegistration = [
         try {
             const errors = validationResult(req);
             if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
-
-            const { phone, registrations, amount } = req.body;
-
             // Check if participant already exists
+            const { phone, registrations, amount } = req.body;
             const participant = await Participant.findOne({ phone });
 
             if (participant) {
@@ -34,7 +33,7 @@ export const createRegistration = [
                 const { canRegister, message } = canRegisterForEvents(participant, registrations);
                 if (!canRegister) return res.status(400).json({ message });
             } else if (registrations.length > MAX_EVENTS) {
-                return res.status(400).json({ message: 'User can register for up to 4 unique events' });
+                return res.status(400).json({ message: `User can register for up to ${MAX_EVENTS} unique events` });
             }
 
             // Create a new order for the registration
@@ -44,7 +43,7 @@ export const createRegistration = [
             // Respond with order details
             res.status(200).json({ success: true, orderId: order.id, amount: order.amount, currency: order.currency, key: order.key });
         } catch (error) {
-            console.log('Error during registration:', error);
+            console.error('Error during registration:', error);
             next(error);
         }
     }
@@ -105,7 +104,7 @@ export const registerParticipant = async (req, res, next) => {
         });
     } catch (error) {
         await session.abortTransaction();
-        console.log('Error during registration:', error);
+        console.error('Error during registration:', error);
         next(error);
     } finally {
         session.endSession();
