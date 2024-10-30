@@ -18,8 +18,8 @@ const canRegisterForEvents = (participant, newRegistrations) => {
 
 // Controller to handle registration requests
 export const createRegistration = [
-    registrationLimiter, // Middleware to limit registration requests
-    validateInputs, // Middleware to validate input data
+    // registrationLimiter, // Middleware to limit registration requests
+    // validateInputs, // Middleware to validate input data
     async (req, res, next) => {
         try {
             const errors = validationResult(req);
