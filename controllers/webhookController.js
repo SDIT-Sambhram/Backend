@@ -2,6 +2,10 @@ import crypto from 'crypto';
 import Participant from '../models/Participant.js';
 import { generateQRCode } from '../helpers/qrCodeGenerator.js';
 import mongoose from 'mongoose';
+import dotenv from "dotenv";
+
+dotenv.config();
+
 
 export const razorpayWebhook = async (req, res) => {
     const secret = process.env.RAZORPAY_WEBHOOK_SECRET;
