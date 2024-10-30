@@ -25,13 +25,13 @@ app.use('/api/v1/auth', authRoutes);
 
 //rest api
 app.get('/', (request, response) => {
-    response.send("Welcome to our medical shop")
+    response.send("Welcome to our Sambhram")
 })
 
 //port
 
 const PORT = process.env.PORT || 8081;
-1
+
 app.listen(PORT, () => {
     console.log(`Server Running on ${PORT}`.bgCyan.white);
 })
