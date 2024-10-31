@@ -69,6 +69,11 @@ export const registerParticipant = [
             // Save participant data in the session
             await participant.save({ session });
 
+
+
+            await session.commitTransaction();
+
+            
             // Respond with success message and order details
             res.status(201).send({
                 success: true,
@@ -77,8 +82,6 @@ export const registerParticipant = [
                 amount: order.amount,
                 currency: order.currency,
             });
-
-            await session.commitTransaction();
 
 
         } catch (error) {
