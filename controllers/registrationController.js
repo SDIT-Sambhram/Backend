@@ -31,7 +31,7 @@ export const registerParticipant = [
 
             console.log('Request body:', req.body);
 
-            const { name, usn, college, phone, amount,  registrations } = req.body;
+            const { name, usn, college, phone, amount, registrations } = req.body;
 
 
             // Validate required fields
@@ -43,7 +43,7 @@ export const registerParticipant = [
             let participant = await Participant.findOne({ phone }).session(session);
             const isNewParticipant = !participant;
 
-                        // Create a new order for the registration
+            // Create a new order for the registration
             const order = await createOrder(amount);
             if (!order) throw new Error('Order creation failed');
 
@@ -69,11 +69,6 @@ export const registerParticipant = [
             // Save participant data in the session
             await participant.save({ session });
 
-            // Generate QR code for the participant after successful registration
-
-
-            await session.commitTransaction();
-
             // Respond with success message and order details
             res.status(201).send({
                 success: true,
@@ -81,16 +76,11 @@ export const registerParticipant = [
                 orderId: order.id,
                 amount: order.amount,
                 currency: order.currency,
-                participant: {
-                    _id: participant._id,
-                    name: participant.name,
-                    usn: participant.usn,
-                    phone: participant.phone,
-                    college: participant.college,
-                    registrations: participant.registrations,
-                    qr_code: participant.qr_code // Include the QR code in the response
-                }
             });
+
+            await session.commitTransaction();
+
+
         } catch (error) {
             await session.abortTransaction();
             console.error('Error during registration:', error);
