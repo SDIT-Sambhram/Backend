@@ -31,7 +31,8 @@ export const registerParticipant = [
 
             console.log('Request body:', req.body);
 
-            const { name, usn, phone, college, amount,  registrations } = req.body;
+            const { name, usn, college, phone, amount,  registrations } = req.body;
+
 
             // Validate required fields
             if (!name || !usn || !phone || !college || !registrations || registrations.length === 0) {
@@ -74,7 +75,7 @@ export const registerParticipant = [
             await session.commitTransaction();
 
             // Respond with success message and order details
-            res.status(201).json({
+            res.status(201).send({
                 success: true,
                 message: 'User registered successfully, awaiting payment confirmation',
                 orderId: order.id,
