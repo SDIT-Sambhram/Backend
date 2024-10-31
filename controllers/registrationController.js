@@ -31,7 +31,7 @@ export const registerParticipant = [
 
             console.log('Request body:', req.body);
 
-            const { name, usn, phone, college, registrations, amount } = req.body;
+            const { name, usn, phone, college, amount,  registrations } = req.body;
 
             // Validate required fields
             if (!name || !usn || !phone || !college || !registrations || registrations.length === 0) {
