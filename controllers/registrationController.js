@@ -29,6 +29,8 @@ export const registerParticipant = [
             const errors = validationResult(req);
             if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
 
+            console.log('Request body:', req.body);
+
             const { name, usn, phone, college, registrations, amount } = req.body;
 
             // Validate required fields
