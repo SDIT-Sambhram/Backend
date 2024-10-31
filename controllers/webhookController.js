@@ -6,7 +6,6 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-
 export const razorpayWebhook = async (req, res) => {
     const secret = process.env.RAZORPAY_WEBHOOK_SECRET;
 
@@ -19,7 +18,7 @@ export const razorpayWebhook = async (req, res) => {
     }
 
     const { payload } = req.body;
-    const { payment_id, order_id } = payload.payment.entity;
+    const { order_id } = payload.payment.entity;
 
     const session = await mongoose.startSession();
     session.startTransaction();
@@ -30,15 +29,17 @@ export const razorpayWebhook = async (req, res) => {
             throw new Error('Participant not found');
         }
 
-        const qrCode = await generateQRCode(participant._id);
+               // If QR code was not generated yet, generate it here
+               if (!participant.qr_code || participant.qr_code === 'pending') {
+                    participant.qr_code = await generateQRCode(participant._id);
+            }
 
+        // Update registration with payment details
         participant.registrations = participant.registrations.map(reg => {
             if (reg.order_id === order_id) {
                 return {
                     ...reg,
-                    qr_code: qrCode,
                     payment_status: 'paid',
-                    razorpay_payment_id: payment_id,
                     registration_date: new Date()
                 };
             }
@@ -51,7 +52,7 @@ export const razorpayWebhook = async (req, res) => {
         res.status(200).json({ success: true });
     } catch (error) {
         await session.abortTransaction();
-        console.log('Error during webhook processing:', error);
+        console.error('Error during webhook processing:', error);
         res.status(500).send({ message: 'Internal Server Error', error: error.message });
     } finally {
         session.endSession();
