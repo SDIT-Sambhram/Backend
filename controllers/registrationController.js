@@ -75,7 +75,7 @@ export const registerParticipant = [
             await session.commitTransaction();
 
             // Respond with success message and order details
-            res.status(201).json({
+            res.status(201).send({
                 success: true,
                 message: 'User registered successfully, awaiting payment confirmation',
                 orderId: order.id,
