@@ -96,4 +96,4 @@ export const registerParticipant = [
             session.endSession();
         }
     }
-];
+
