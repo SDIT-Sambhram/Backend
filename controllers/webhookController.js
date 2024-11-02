@@ -51,7 +51,7 @@ export const razorpayWebhook = async (req, res) => {
 
         console.log('Payment successful for order:', order_id);
 
-        res.status(200).send({'Webhook received successfully'});
+        res.status(200).send('Webhook received successfully');
     } catch (error) {
         await session.abortTransaction();
         console.error('Error during webhook processing:', error);
