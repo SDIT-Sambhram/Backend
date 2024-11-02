@@ -20,7 +20,8 @@ export const razorpayWebhook = async (req, res) => {
     }
 
     const { payload } = req.body;
-    const { order_id, phone } = payload.payment.entity;
+    const { order_id } = payload.payment.entity;
+    const phone = payload.payment.entity.notes.phone;
 
     console.log(payload);
 
