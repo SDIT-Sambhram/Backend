@@ -7,7 +7,7 @@ const getAllEventDetails = async (req, res) => {
     try {
         // Fetch all events
         const events = await Event.find().lean();  // `lean()` for faster read-only operations
-        console.log("Events retrieved successfully:", events);
+        console.log("Events retrieved successfully from DB");
 
         res.status(200).send(events)// Send the events as JSON response
         
