@@ -22,6 +22,8 @@ export const razorpayWebhook = async (req, res) => {
     const { payload } = req.body;
     const { order_id, phone } = payload.payment.entity;
 
+    console.log(payload);
+
     const session = await mongoose.startSession();
     session.startTransaction();
 
