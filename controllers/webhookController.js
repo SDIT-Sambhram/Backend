@@ -22,20 +22,18 @@ export const razorpayWebhook = async (req, res) => {
 
     const session = await mongoose.startSession();
     session.startTransaction();
+    let transactionCommitted = false;
 
     try {
-        // Directly find the participant with the matching order_id
         const participant = await Participant.findOne({ 'registrations.order_id': webhookOrderId }).session(session);
         if (!participant) {
             throw new Error('Participant not found');
         }
 
-        // If QR code was not generated yet, generate it here
         if (!participant.qr_code || participant.qr_code === 'pending') {
             participant.qr_code = await generateQRCode(participant._id);
         }
 
-        // Update the specific registration entry with the matching order_id
         const registration = participant.registrations.find(reg => reg.order_id === webhookOrderId);
         if (registration) {
             registration.payment_status = 'paid';
@@ -46,12 +44,15 @@ export const razorpayWebhook = async (req, res) => {
 
         await participant.save({ session });
         await session.commitTransaction();
+        transactionCommitted = true;
 
         console.log('Payment successful for order:', order_id);
 
         res.status(200).send('Webhook received successfully');
     } catch (error) {
-        await session.abortTransaction();
+        if (!transactionCommitted) {
+            await session.abortTransaction();
+        }
         console.error('Error during webhook processing:', error);
         res.status(500).send({ message: 'Internal Server Error', error: error.message });
     } finally {
