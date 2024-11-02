@@ -49,7 +49,7 @@ export const razorpayWebhook = async (req, res) => {
         await participant.save({ session });
         await session.commitTransaction();
 
-        res.status(200).json({ success: true });
+        res.status(200).send({ message: 'Webhook received successfully'});
     } catch (error) {
         await session.abortTransaction();
         console.error('Error during webhook processing:', error);
