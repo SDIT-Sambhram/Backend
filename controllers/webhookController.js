@@ -18,33 +18,31 @@ export const razorpayWebhook = async (req, res) => {
     }
 
     const { payload } = req.body;
-    const { order_id } = payload.payment.entity;
+    const { order_id: webhookOrderId } = payload.payment.entity;
 
     const session = await mongoose.startSession();
     session.startTransaction();
 
     try {
-        const participant = await Participant.findOne({ 'registrations.order_id': order_id }).session(session);
+        // Directly find the participant with the matching order_id
+        const participant = await Participant.findOne({ 'registrations.order_id': webhookOrderId }).session(session);
         if (!participant) {
             throw new Error('Participant not found');
         }
 
-               // If QR code was not generated yet, generate it here
-               if (!participant.qr_code || participant.qr_code === 'pending') {
-                    participant.qr_code = await generateQRCode(participant._id);
-            }
+        // If QR code was not generated yet, generate it here
+        if (!participant.qr_code || participant.qr_code === 'pending') {
+            participant.qr_code = await generateQRCode(participant._id);
+        }
 
-        // Update registration with payment details
-        participant.registrations = participant.registrations.map(reg => {
-            if (reg.order_id === order_id) {
-                return {
-                    ...reg,
-                    payment_status: 'paid',
-                    registration_date: new Date()
-                };
-            }
-            return reg;
-        });
+        // Update the specific registration entry with the matching order_id
+        const registration = participant.registrations.find(reg => reg.order_id === webhookOrderId);
+        if (registration) {
+            registration.payment_status = 'paid';
+            registration.registration_date = new Date();
+        } else {
+            throw new Error('Registration not found for the given order_id');
+        }
 
         await participant.save({ session });
         await session.commitTransaction();
