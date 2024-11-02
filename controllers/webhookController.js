@@ -41,13 +41,12 @@ export const razorpayWebhook = async (req, res) => {
         }
 
         // Find and update the specific registration with the matching order_id
-        const registrationIndex = participant.registrations.findIndex(reg => reg.order_id === order_id);
-        if (registrationIndex !== -1) {
-            participant.registrations.payment_status = 'paid';
-            participant.registrations.registration_date = new Date();
-        } else {
-            throw new Error('Registration with given order_id not found');
-        }
+        participant.registrations.forEach(reg => {
+            if (reg.order_id === order_id) {
+                reg.payment_status = 'paid';
+                reg.registration_date = new Date();
+            }
+        });
 
         // Save participant with updated registration details
         await participant.save({ session });
