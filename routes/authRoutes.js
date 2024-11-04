@@ -1,16 +1,14 @@
 import express from "express";
-import {registerController,verifyAndRegisterParticipant} from "../controllers/registrationController.js";
+import { registerParticipant } from "../controllers/registrationController.js";
 import getAllEventDetails from "../controllers/eventController.js";
-
+import { razorpayWebhook } from "../controllers/webhookController.js";
 
 //router object
 const router = express.Router();
 
 //routing
-router.post('/payment', registerController);
-router.post('/payment/verify', verifyAndRegisterParticipant);
+router.post('/payment', registerParticipant);
+router.post('/payment/webhook', express.json({ verify: (req, res, buf) => { req.rawBody = buf; } }), razorpayWebhook);
 router.get('/events', getAllEventDetails);
-
-
 
 export default router;
