@@ -2,7 +2,6 @@ import Participant from "../models/Participant.js";
 import mongoose from "mongoose";
 import { validationResult } from 'express-validator';
 import { createOrder } from "../controllers/paymentController.js";
-import { generateQRCode } from '../helpers/qrCodeGenerator.js'; // Import QR code generator
 import registrationLimiter from '../middlewares/rateLimiter.js';
 import { validateInputs } from '../helpers/validation.js';
 
@@ -10,10 +9,29 @@ const MAX_EVENTS = 4;
 
 // Helper function to check event registration limits
 const canRegisterForEvents = (participant, newRegistrations) => {
-    const existingEventIds = new Set(participant.registrations.map(reg => reg.event_id.toString()));
-    if (participant.registrations.length >= MAX_EVENTS) return { canRegister: false, message: `User can register for up to ${MAX_EVENTS} unique events` };
-    const conflictingEventIds = newRegistrations.filter(reg => existingEventIds.has(reg.event_id.toString())).map(reg => reg.event_id.toString());
-    if (conflictingEventIds.length > 0) return { canRegister: false, message: `User has already registered for the following events: ${conflictingEventIds.join(', ')}` };
+    // Get unique event IDs from existing registrations, excluding failed payments
+    const existingEventIds = new Set(
+        participant.registrations
+            .filter(reg => reg.payment_status !== 'failed')
+            .map(reg => reg.event_id.toString())
+    );
+
+    const totalRegisteredEvents = existingEventIds.size;
+
+    // Check if the participant has reached the max events limit
+    if (totalRegisteredEvents >= MAX_EVENTS) {
+        return { canRegister: false, message: `User can register for up to ${MAX_EVENTS} unique events` };
+    }
+
+    // Identify any conflicting event IDs with new registrations
+    const conflictingEventIds = newRegistrations
+        .map(reg => reg.event_id.toString())
+        .filter(eventId => existingEventIds.has(eventId));
+
+    if (conflictingEventIds.length > 0) {
+        return { canRegister: false, message: `User has already registered for the following events: ${conflictingEventIds.join(', ')}` };
+    }
+
     return { canRegister: true };
 };
 
@@ -32,7 +50,6 @@ export const registerParticipant = [
             console.log('Request body:', req.body);
 
             const { name, usn, college, phone, amount, registrations } = req.body;
-
 
             // Validate required fields
             if (!name || !usn || !phone || !college || !registrations || registrations.length === 0) {
@@ -68,12 +85,8 @@ export const registerParticipant = [
 
             // Save participant data in the session
             await participant.save({ session });
-
-
-
             await session.commitTransaction();
 
-            
             // Respond with success message and order details
             res.status(201).send({
                 success: true,
@@ -83,9 +96,11 @@ export const registerParticipant = [
                 currency: order.currency,
             });
 
-
         } catch (error) {
-            await session.abortTransaction();
+            // Check if the session is in a transaction before aborting
+            if (session.inTransaction()) {
+                await session.abortTransaction();
+            }
             console.error('Error during registration:', error);
             res.status(500).json({ message: 'Internal Server Error', error: error.message });
         } finally {
