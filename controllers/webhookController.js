@@ -46,7 +46,7 @@ export const razorpayWebhook = async (req, res) => {
 
         // Loop through all registrations to update matching entries
         for (let reg of participant.registrations) {
-            if (reg.order_id === order_id && reg.payment_status === 'pending') {
+            if (reg.order_id === order_id && (reg.payment_status === 'pending' || reg.payment_status === 'failed')) {
                 // Update payment status and registration date
                 reg.payment_status = paymentStatus === 'captured' ? 'paid' : 'failed';
                 reg.registration_date = new Date();
