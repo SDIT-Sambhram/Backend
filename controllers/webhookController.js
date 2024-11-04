@@ -2,7 +2,8 @@ import crypto from 'crypto';
 import Participant from '../models/Participant.js';
 import { generateQRCode } from '../helpers/qrCodeGenerator.js';
 import mongoose from 'mongoose';
-import dotenv from "dotenv";
+import dotenv from 'dotenv';
+import qrCode from 'razorpay/dist/types/qrCode.js';
 
 dotenv.config();
 
@@ -20,8 +21,9 @@ export const razorpayWebhook = async (req, res) => {
     }
 
     const { payload } = req.body;
-    const { order_id } = payload.payment.entity;
-    const phone = payload.payment.entity.notes.phone;
+    const { order_id, payment } = payload.payment.entity; // Destructure payment entity
+    const phone = payment.notes.phone;
+    const paymentStatus = payment.status; // Get the payment status
 
     console.log(payload);
 
@@ -35,24 +37,47 @@ export const razorpayWebhook = async (req, res) => {
             throw new Error('Participant not found');
         }
 
-        // Generate QR code if not generated yet
-        if (!participant.qr_code || participant.qr_code === 'pending') {
-            participant.qr_code = await generateQRCode(participant._id);
+
+
+        // Update registrations based on payment status
+        let registrationUpdated = false;
+
+        if (paymentStatus === 'captured') {
+            // Payment successful
+            for (let reg of participant.registrations) {
+                if (reg.order_id === order_id && reg.payment_status === 'pending') {
+                    reg.payment_status = 'paid';
+                    reg.registration_date = new Date();
+                    if (!reg.qr_code || reg.qr_code === 'pending') {
+                        reg.qr_code = await generateQRCode(participant._id);// Generate the QR code upon payment capture
+                    }
+
+                    registrationUpdated = true;
+                    break;
+                }
+            }
+        }
+        
+        else if (paymentStatus === 'failed') {
+            // Payment failed - update status to 'failed' but do not delete
+            for (let reg of participant.registrations) {
+                if (reg.order_id === order_id && reg.payment_status === 'pending') {
+                    reg.payment_status = 'failed';
+                    registrationUpdated = true;
+                    break;
+                }
+            }
         }
 
-        // Find and update the specific registration with the matching order_id
-        participant.registrations.forEach(reg => {
-            if (reg.order_id === order_id) {
-                reg.payment_status = 'paid';
-                reg.registration_date = new Date();
-            }
-        });
+        if (!registrationUpdated) {
+            throw new Error('No matching pending registration found for the provided order_id');
+        }
 
         // Save participant with updated registration details
         await participant.save({ session });
         await session.commitTransaction();
 
-        console.log('Payment successful for order:', order_id);
+        console.log(`Payment ${paymentStatus} for order:`, order_id);
         return res.status(200).json({ message: 'Webhook received successfully' });
     } catch (error) {
         if (session.inTransaction()) {
