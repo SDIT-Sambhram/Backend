@@ -3,7 +3,6 @@ import Participant from '../models/Participant.js';
 import { generateQRCode } from '../helpers/qrCodeGenerator.js';
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
-import qrCode from 'razorpay/dist/types/qrCode.js';
 
 dotenv.config();
 
