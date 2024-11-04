@@ -20,9 +20,9 @@ export const razorpayWebhook = async (req, res) => {
     }
 
     const { payload } = req.body;
-    const { order_id, payment } = payload.payment.entity; // Destructure payment entity
-    const phone = payment.notes.phone;
-    const paymentStatus = payment.status; // Get the payment status
+    const { order_id } = payload.payment.entity;
+    const phone = payload.payment.entity.notes.phone;
+    const paymentStatus = payload.payment.entity.notes.phone; // Get the payment status
 
     console.log(payload);
 
