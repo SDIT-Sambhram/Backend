@@ -29,7 +29,7 @@ const canRegisterForEvents = (participant, newRegistrations) => {
         .filter(eventId => existingEventIds.has(eventId));
 
     if (conflictingEventIds.length > 0) {
-        return { canRegister: false, message: `User has already registered for the following events: ${conflictingEventIds.join(', ')}` };
+        return { canRegister: false, message: `User has already registered for the following events`}};
     }
 
     return { canRegister: true };
