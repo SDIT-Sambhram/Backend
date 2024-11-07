@@ -24,8 +24,7 @@ export const generateTicket = async (participantId, name, phone, qr_code) => {
 
     // res.json({ success: true, ticketUrl: s3ImageUrl });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Failed to generate ticket' });
+    console.error("error in generating ticket", error);
   }
 };
 
