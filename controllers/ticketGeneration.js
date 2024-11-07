@@ -1,6 +1,9 @@
 import path from 'path';
 import { updateTicketImage } from '../helpers/imageUpdation.js';
 // import { uploadImageToS3 } from '../helpers/uploadImagetoS3.js';
+// Define __dirname for ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 export const generateTicket = async (participantId, name, phone, qr_code) => {
   try {
