@@ -64,7 +64,7 @@
 
                 // generate ticket image if payment is successful
                 if (paymentStatus === 'captured') {
-                    const imageUrl = await generateTicket(participantId, participant.name, phone, participant.qr_code);
+                    const imageUrl = await generateTicket(participant._id, participant.name, phone, participant.qr_code);
                     console.log(`Ticket image URL: ${imageUrl}`);
                 }
 
