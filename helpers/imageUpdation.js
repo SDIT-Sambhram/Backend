@@ -16,7 +16,7 @@ export const updateTicketImage = async (name, phone, qr_code) => {
 
   // Overlay text and QR code on the image
   const updatedImageBuffer = await sharp(baseTicketPath)
-    .resize(800, 600)  // Adjust dimensions as needed
+    .resize(1875, 5156)  // Adjust dimensions as needed
     .composite([
       {
         input: Buffer.from(`
