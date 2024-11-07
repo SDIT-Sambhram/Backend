@@ -1,7 +1,5 @@
-import path from 'path';
+
 import { updateTicketImage } from '../helpers/imageUpdation.js';
-import { fileURLToPath } from 'url';
-import fs from 'fs';
 // import { uploadImageToS3 } from '../helpers/uploadImagetoS3.js';
 // Define __dirname for ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -12,15 +10,11 @@ export const generateTicket = async (participantId, name, phone, qr_code) => {
 
     console.log('Generating ticket for:', name, phone, qr_code);
     // Update the ticket image
-    const updatedImageBuffer = await updateTicketImage(name, phone, qr_code);
+    const path = await updateTicketImage(name, phone, qr_code);
 
-    console.log('Ticket generated successfully!', updatedImageBuffer);
+    console.log('Ticket generated successfully!', path);
 
       // Define the path to save the updated image locally
-   const savePath = path.join(__dirname, '../images/tickets/updated_ticket.png');
-  
-  // Write the updated image buffer to a local file
-    fs.writeFileSync(savePath, updatedImageBuffer);
 
     // // S3 Key based on participant ID
     // const s3Key = `tickets/${participant._id}.png`;

@@ -31,7 +31,9 @@ export const updateTicketImage = async (name, phone, qr_code) => {
     }
 
     // Resize the base image and overlay the text and QR code
-    const updatedImageBuffer = await sharp(baseTicketPath)
+    const outputPath = path.join(__dirname, '../images/tickets/updated_ticket.png'); // Path to save the updated ticket image
+
+    await sharp(baseTicketPath)
       .resize(1875, 5156)  // Ensure these dimensions fit the base image
       .composite([
         // Overlay the participant details (name, phone)
@@ -55,10 +57,10 @@ export const updateTicketImage = async (name, phone, qr_code) => {
           left: 1600, // Adjust left position as needed
         },
       ])
-      .toBuffer();
+      .toFile(outputPath);  // Save the updated image locally
 
-    // Return the updated image buffer
-    return updatedImageBuffer;
+    console.log('Ticket image saved at:', outputPath);
+    return outputPath;
 
   } catch (error) {
     // Handle any errors that may occur
