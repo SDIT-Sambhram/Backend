@@ -10,5 +10,6 @@ const router = express.Router();
 router.post('/payment', registerParticipant);
 router.post('/payment/webhook', express.json({ verify: (req, res, buf) => { req.rawBody = buf; } }), razorpayWebhook);
 router.get('/events', getAllEventDetails);
+router.get('/ticket', );
 
 export default router;
