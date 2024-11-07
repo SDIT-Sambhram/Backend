@@ -1,6 +1,7 @@
 import path from 'path';
 import { updateTicketImage } from '../helpers/imageUpdation.js';
 import { fileURLToPath } from 'url';
+import fs from 'fs';
 // import { uploadImageToS3 } from '../helpers/uploadImagetoS3.js';
 // Define __dirname for ES modules
 const __filename = fileURLToPath(import.meta.url);
