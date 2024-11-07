@@ -1,10 +1,18 @@
 import sharp from 'sharp';
 import QRCode from 'qrcode';
 import path from 'path';
+import { fileURLToPath } from 'url';
+
+// Define __dirname for ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Function to update ticket image with participant details
 export const updateTicketImage = async (name, phone, qr_code) => {
   const baseTicketPath = path.join(__dirname, '../images/tickets/1.png');
+
+  // Generate the QR code buffer
+  const qrCodeBuffer = await QRCode.toBuffer(qr_code);
 
   // Overlay text and QR code on the image
   const updatedImageBuffer = await sharp(baseTicketPath)
@@ -33,5 +41,3 @@ export const updateTicketImage = async (name, phone, qr_code) => {
 
   return updatedImageBuffer;
 };
-
-
