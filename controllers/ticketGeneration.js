@@ -1,3 +1,4 @@
+import path from 'path';
 import { updateTicketImage } from '../helpers/imageUpdation.js';
 // import { uploadImageToS3 } from '../helpers/uploadImagetoS3.js';
 
