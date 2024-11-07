@@ -12,9 +12,16 @@ export const updateTicketImage = async (name, phone, qr_code) => {
     // Path to the base ticket image
     const baseTicketPath = path.join(__dirname, '../images/tickets/1.png');
     
-    // Check if the QR code buffer is provided
+    // Check if the QR code buffer (or Base64 string) is provided
     if (!qr_code) {
-      throw new Error('QR code buffer is required');
+      throw new Error('QR code is required');
+    }
+
+    // If the QR code is a Base64 string, convert it to a Buffer
+    let qrCodeBuffer = qr_code;
+    if (qr_code.startsWith('data:image/png;base64,')) {
+      const base64Data = qr_code.replace(/^data:image\/png;base64,/, '');
+      qrCodeBuffer = Buffer.from(base64Data, 'base64');
     }
 
     // Ensure the base ticket image exists (optional, for additional safety)
@@ -43,7 +50,7 @@ export const updateTicketImage = async (name, phone, qr_code) => {
         },
         // Overlay the QR code image at the specified position
         {
-          input: qr_code,
+          input: qrCodeBuffer,
           top: 1200,  // Adjust top position as needed
           left: 1600, // Adjust left position as needed
         },
