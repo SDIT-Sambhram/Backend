@@ -12,7 +12,7 @@ export const generateTicket = async (participantId, name, phone, qr_code) => {
     const s3Key = `tickets/${participantId}.png`;
 
     // Upload the image buffer directly to S3
-    const s3ImageUrl = await uploadImageToS3(updatedImageBuffer, s3Key);
+    const s3ImageUrl = await uploadImageToS3(s3Key, updatedImageBuffer);
 
     console.log('Ticket generated successfully:', s3ImageUrl);
 
