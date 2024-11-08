@@ -20,6 +20,9 @@ export const uploadImageToS3 = async (fileName, imageBuffer) => {
     Body: imageBuffer,
     ContentType: 'image/png', // Adjust this if your image type varies
   };
+  console.log("Bucket:", process.env.AWS_BUCKET_NAME);
+  console.log("Key (fileName):", fileName);
+  console.log("Body (imageBuffer type):", typeof imageBuffer);
 
   try {
     // Use the `PutObjectCommand` to upload to S3

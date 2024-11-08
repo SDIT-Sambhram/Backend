@@ -1,7 +1,7 @@
 import { updateTicketImage } from '../helpers/imageUpdation.js';
 import { uploadImageToS3 } from '../helpers/uploadImagetoS3.js';
 
-export const generateTicket = async (participantId, name, phone, qr_code, res) => {
+export const generateTicket = async (participantId, name, phone, qr_code) => {
   try {
     console.log('Generating ticket for:', name, phone, qr_code);
 
@@ -16,10 +16,8 @@ export const generateTicket = async (participantId, name, phone, qr_code, res) =
 
     console.log('Ticket generated successfully:', s3ImageUrl);
 
-    // Respond with the S3 URL
-    res.json({ success: true, ticketUrl: s3ImageUrl });
+    return s3ImageUrl;
   } catch (error) {
     console.error("Error generating ticket:", error);
-    res.status(500).json({ success: false, message: 'Failed to generate ticket' });
   }
 };
