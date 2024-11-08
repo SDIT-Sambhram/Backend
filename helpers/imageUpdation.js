@@ -17,50 +17,48 @@ export const updateTicketImage = async (name, phone, qr_code) => {
       throw new Error('QR code is required');
     }
 
-    // If the QR code is a Base64 string, convert it to a Buffer
+    // Convert the QR code from a Base64 string to a Buffer if necessary
     let qrCodeBuffer = qr_code;
     if (qr_code.startsWith('data:image/png;base64,')) {
       const base64Data = qr_code.replace(/^data:image\/png;base64,/, '');
       qrCodeBuffer = Buffer.from(base64Data, 'base64');
     }
 
-    // Ensure the base ticket image exists (optional, for additional safety)
+    // Ensure the base ticket image exists
     const ticketExists = await sharp(baseTicketPath).metadata().then(() => true).catch(() => false);
     if (!ticketExists) {
       throw new Error('Base ticket image not found at the specified path');
     }
 
-    // Resize the base image and overlay the text and QR code
-    const outputPath = path.join(__dirname, '../images/tickets/updated_ticket.png'); // Path to save the updated ticket image
-
-    await sharp(baseTicketPath)
-      .resize(1875, 5156)  // Ensure these dimensions fit the base image
+    // Create the updated image with participant details and QR code
+    const updatedImageBuffer = await sharp(baseTicketPath)
+      .resize(1875, 5142)  // Adjust dimensions as needed
       .composite([
-        // Overlay the participant details (name, phone)
         {
           input: Buffer.from(`
-            <svg width="1875" height="5156">
+            <svg width="800" height="600">
               <style>
-                .name { font-size: 48px; fill: #000000; }
-                .phone { font-size: 48px; fill: #000000; }
+                .name { font-size: 24px; fill: #000000; font-weight: bold; }
+                .phone { font-size: 20px; fill: #000000; }
               </style>
-              <text x="50" y="150" class="name">Name: ${name}</text>
-              <text x="50" y="250" class="phone">Phone: ${phone}</text>
+              <text x="50" y="50" class="name">Name: ${name}</text>
+              <text x="50" y="100" class="phone">Phone: ${phone}</text>
             </svg>
           `),
           gravity: 'northwest',
         },
-        // Overlay the QR code image at the specified position
         {
           input: qrCodeBuffer,
-          top: 1200,  // Adjust top position as needed
-          left: 1600, // Adjust left position as needed
+          top: 300,
+          left: 600,
         },
       ])
-      .toFile(outputPath);  // Save the updated image locally
+      .toBuffer();  // Generate the image buffer without saving to file
 
-    console.log('Ticket image saved at:', outputPath);
-    return outputPath;
+    console.log('Ticket image generated successfully in memory.');
+
+    // Return the image buffer for further processing (e.g., upload to S3)
+    return updatedImageBuffer;
 
   } catch (error) {
     // Handle any errors that may occur
