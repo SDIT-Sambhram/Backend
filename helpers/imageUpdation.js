@@ -13,11 +13,6 @@ export const updateTicketImage = async (name, phone) => {
   try {
     // Path to the base ticket image
     const baseTicketPath = path.join(__dirname, '../images/tickets/1.png');
-    
-    // Check if the QR code buffer (or Base64 string) is provided
-    if (!qr_code) {
-      throw new Error('QR code is required');
-    }
 
     // Generate the QR code buffer using the provided data
     let qrCodeBuffer = await generateQRCode(participantId);
