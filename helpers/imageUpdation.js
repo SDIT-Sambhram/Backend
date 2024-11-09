@@ -32,8 +32,8 @@ export const updateTicketImage = async (participantId, name, phone, price, event
           input: Buffer.from(`
             <svg width="300" height="825">
               <style>
-                .name { font-size: 20px; fill: #E4E3E3; font-family: 'Montserrat'; }
-                .phone { font-size: 20px; fill: #E4E3E3; font-family: 'Montserrat'; }
+                .name { font-size: 18px; fill: #E4E3E3; font-family: 'Montserrat'; }
+                .phone { font-size: 18px; fill: #E4E3E3; font-family: 'Montserrat'; }
               </style>
               <text x="13" y="380" class="name">Name: ${name}</text>
               <text x="13" y="400" class="phone">Phone: ${phone}</text>
@@ -45,17 +45,19 @@ export const updateTicketImage = async (participantId, name, phone, price, event
           input: Buffer.from(`
             <svg width="300" height="825">
               <style>
+                .eventCount { font-size: 18px; fill: #E4E3E3; font-family: 'Montserrat'; }
                 .price { font-size: 20px; fill: #E4E3E3; font-family: 'Montserrat'; }
               </style>
-              <text x="13" y="450" class="price">Events: ${eventCount} | Price: ${price}</text>
+              <text x="13" y="450" class="eventCount">${eventCount} </text>
+              <text x="13" y="450" class="price">${price}</text>
             </svg>
           `),
           gravity: 'northwest',
         },
         {
           input: qrCodeBuffer,
-          top: 640,  // Positioned closer to the bottom
-          left: 60,  // Center the QR code horizontally within the image width
+          top: 620,  // Positioned closer to the bottom
+          left: 750,  // Center the QR code horizontally within the image width
         },
       ])
       .toBuffer();  // Generate the image buffer without saving to file
