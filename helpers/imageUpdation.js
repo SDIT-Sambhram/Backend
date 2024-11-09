@@ -11,7 +11,7 @@ const __dirname = path.dirname(__filename);
 export const updateTicketImage = async (participantId, name, phone, price, eventCount) => {
   try {
     // Path to the base ticket image
-    const baseTicketPath = path.join(__dirname, '../images/tickets/1.png');
+    const baseTicketPath = path.join(__dirname, `../images/tickets/${eventCount}.png`);
 
     // Generate the QR code base64 string using the provided data
     let qrCodeBase64 = await generateQRCode(participantId);
