@@ -38,6 +38,9 @@ export const razorpayWebhook = async (req, res) => {
             throw new Error('Participant not found');
         }
 
+         // Calculate registration count
+         const eventCount = participant.registrations.filter(reg => reg.payment_status === 'paid').length;
+         
          // Generate ticket image if payment is successful
          if (paymentStatus === 'captured') {
             const imageUrl = await generateTicket(participant._id, participant.name, phone, price, eventCount);
@@ -65,8 +68,7 @@ export const razorpayWebhook = async (req, res) => {
         // Save participant with updated registration details
         await participant.save({ session });
 
-        // Calculate registration count
-        const eventCount = participant.registrations.filter(reg => reg.payment_status === 'paid').length;
+       
 
         await session.commitTransaction();
 
