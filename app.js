@@ -25,7 +25,7 @@ app.use('/api/v1/auth', authRoutes);
 
 // Root endpoint
 app.get('/', (request, response) => {
-    response.send("Welcome to our medical shop");
+    response.send("Server is up and running");
 });
 
 // Export the app as a Lambda-compatible handler

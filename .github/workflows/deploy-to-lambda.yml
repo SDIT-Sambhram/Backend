@@ -29,19 +29,6 @@ jobs:
         run: |
           zip -r code.zip . -x ".git/*"
 
-      # Deploy Lambda using AWS CLI from S3 bucket
-      - name: Deploy to AWS Lambda (via S3)
-        run: |
-          aws lambda update-function-code \
-            --function-name arn:aws:lambda:ap-south-1:577638369990:function:sambhram-backend \
-            --s3-bucket sambhram-assets \
-            --s3-key path/to/code.zip
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_DEFAULT_REGION: ap-south-1
-
-      # Alternative deployment from local file (use only if you're not using S3)
       - name: Deploy to AWS Lambda (via local file)
         run: |
           aws lambda update-function-code \
