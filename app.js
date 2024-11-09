@@ -30,3 +30,4 @@ app.get('/', (request, response) => {
 
 // Export the app as a Lambda-compatible handler
 export const handler = serverless(app);
+

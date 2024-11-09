@@ -13,7 +13,7 @@ provider:
 
 functions:
   app:
-    handler: app.handler  # Ensure `app.js` is the entry point and `handler` is the function export
+    handler: backend/app.handler  # Ensure `app.js` is the entry point and `handler` is the function export
     events:
       - httpApi: '*'  # This will route all HTTP paths to this Lambda
 
