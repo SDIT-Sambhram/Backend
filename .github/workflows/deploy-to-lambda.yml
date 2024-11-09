@@ -18,28 +18,20 @@ jobs:
           node-version: '20'
 
       - name: Install Dependencies
-        run: |
-          npm ci
-          npm prune --production
+        run: npm ci
 
       - name: Create ZIP file for Lambda function
-        run: zip -r code.zip . -x ".git/*" # Include node_modules in the ZIP
+        run: zip -r code.zip . -x ".git/*" 
 
-      - name: Upload ZIP to S3
-        run: |
-          aws s3 cp code.zip s3://sambhram-assets/path/to/code.zip
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_DEFAULT_REGION: ${{ secrets.AWS_REGION }}
-
-      - name: Deploy to AWS Lambda from S3
-        run: |
-          aws lambda update-function-code \
-            --function-name arn:aws:lambda:us-east-1:577638369990:function:sambhram-backend \
-            --s3-bucket sambhram-assets \
+      - name: Deploy to AWS Lambda
+        uses: imehedi/actions-awscli-v2@latest
+        with:
+          args: |
+            lambda update-function-code
+            --function-name arn:aws:lambda:ap-south-1:577638369990:function:sambhram-backend
+            --s3-bucket sambhram-assets
             --s3-key path/to/code.zip
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_DEFAULT_REGION: ${{ secrets.AWS_REGION }}
+          AWS_DEFAULT_REGION: ap-south-1
