@@ -1,0 +1,21 @@
+service: sambhram-backend
+
+provider:
+  name: aws
+  runtime: nodejs20.x  # Use Node.js 20.x as per your requirement
+  region: ap-south-1   # Your AWS region
+  stage: dev           # Environment (dev, prod, etc.)
+
+functions:
+  api:
+    handler: app.handler  # Points to the handler export in app.js
+    events:
+      - http:
+          path: /{proxy+}  # This catches all HTTP requests
+          method: any
+          cors: true  # Enable CORS
+    memorySize: 1024  # Adjust memory as per your needs
+    timeout: 30  # Set the timeout (adjust if necessary)
+
+plugins:
+  - serverless-offline  # Optional: for testing Lambda locally

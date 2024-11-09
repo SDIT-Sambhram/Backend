@@ -7,8 +7,8 @@ dotenv.config();
 const s3Client = new S3Client({
   region: process.env.AWS_REGION,
   credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID_,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY_,
   },
 });
 
@@ -28,7 +28,7 @@ export const uploadImageToS3 = async (fileName, imageBuffer) => {
     // Use the `PutObjectCommand` to upload to S3
     const command = new PutObjectCommand(params);
     const data = await s3Client.send(command);
-    const imageUrl = `https://${params.Bucket}.s3.${process.env.AWS_REGION}.amazonaws.com/${fileName}`;
+    const imageUrl = `https://${params.Bucket}.s3.${process.env.AWS_REGION_}.amazonaws.com/${fileName}`;
     console.log('Image uploaded successfully:', imageUrl);
     return imageUrl; // Return the URL of the uploaded image
   } catch (error) {

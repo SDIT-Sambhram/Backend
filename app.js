@@ -1,37 +1,32 @@
 import express from "express";
-import Colors from "colors";
 import dotenv from "dotenv";
 import morgan from "morgan";
 import connectDB from "./configs/db.js";
-import authRoutes from "./routes/authRoutes.js"
+import authRoutes from "./routes/authRoutes.js";
 import cors from "cors";
+import serverless from "serverless-http"; // Import serverless-http
 
-//config dotenv
+// Config dotenv
 dotenv.config();
 
-//database config
+// Database config
 connectDB();
 
-//rest object
+// Initialize express app
 const app = express();
 
-// middleWares
+// Middleware setup
 app.use(cors());
 app.use(express.json());
 app.use(morgan('dev'));
 
-//routes
+// Routes
 app.use('/api/v1/auth', authRoutes);
 
-//rest api
+// Root endpoint
 app.get('/', (request, response) => {
-    response.send("Welcome to our medical shop")
-})
+    response.send("Welcome to our medical shop");
+});
 
-//port
-
-const PORT = process.env.PORT || 8081;
-1
-app.listen(PORT, '0.0.0.0',() => {
-    console.log(`Server Running on ${PORT}`.bgCyan.white);
-})
+// Export the app as a Lambda-compatible handler
+export const handler = serverless(app);
