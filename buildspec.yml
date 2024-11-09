@@ -3,15 +3,20 @@ phases:
     runtime-versions:
       nodejs: 20
     commands:
-      - echo Installing dependencies...
-      - npm install --production
+      - echo "Installing production dependencies..."
+      - npm install
+      - npm prune --production  # Keep only production dependencies
 
   build:
     commands:
-      - echo Building the Lambda ZIP file...
-      - zip -r code.zip . -x "node_modules/*"
+      - echo "Building the Lambda ZIP file..."
+      - zip -r code.zip . -x "*.git/*" "*.github/*" "tests/*"
 
   post_build:
     commands:
-      - echo Deploying the Lambda function...
+      - echo "Deploying the Lambda function..."
       - aws lambda update-function-code --function-name sambhram-backend --zip-file fileb://code.zip --region ap-south-1
+
+artifacts:
+  files:
+    - code.zip
