@@ -30,7 +30,7 @@ export const updateTicketImage = async (participantId, name, phone, price, event
       .composite([
         {
           input: Buffer.from(`
-            <svg width="300" height="200">
+            <svg width="300" height="875">
               <style>
                 .name { font-size: 20px; fill: #E4E3E3; font-family: 'Montserrat'; }
                 .phone { font-size: 20px; fill: #E4E3E3; font-family: 'Montserrat'; }
@@ -54,8 +54,8 @@ export const updateTicketImage = async (participantId, name, phone, price, event
         },
         {
           input: qrCodeBuffer,
-          top: 650,  // Positioned closer to the bottom
-          left: 50,  // Center the QR code horizontally within the image width
+          top: 640,  // Positioned closer to the bottom
+          left: 60,  // Center the QR code horizontally within the image width
         },
       ])
       .toBuffer();  // Generate the image buffer without saving to file
