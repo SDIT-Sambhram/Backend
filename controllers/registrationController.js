@@ -61,7 +61,7 @@ export const registerParticipant = [
             const isNewParticipant = !participant;
 
             // Create a new order for the registration
-            const order = await createOrder(amount, phone);
+            const order = await createOrder(amount, phone, registrations);
             if (!order) throw new Error('Order creation failed');
 
             // Prepare new registrations
