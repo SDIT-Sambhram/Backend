@@ -35,8 +35,8 @@ export const updateTicketImage = async (participantId, name, phone, price, event
                 .name { font-size: 20px; fill: #E4E3E3; font-family: 'Montserrat'; }
                 .phone { font-size: 20px; fill: #E4E3E3; font-family: 'Montserrat'; }
               </style>
-              <text x="10" y="40" class="name">Name: ${name}</text>
-              <text x="10" y="80" class="phone">Phone: ${phone}</text>
+              <text x="13" y="350" class="name">Name: ${name}</text>
+              <text x="13" y="350" class="phone">Phone: ${phone}</text>
             </svg>
           `),
           gravity: 'northwest',
@@ -47,7 +47,7 @@ export const updateTicketImage = async (participantId, name, phone, price, event
               <style>
                 .price { font-size: 20px; fill: #E4E3E3; font-family: 'Montserrat'; }
               </style>
-              <text x="10" y="30" class="price">Events: ${eventCount} | Price: ${price}</text>
+              <text x="13" y="30" class="price">Events: ${eventCount} | Price: ${price}</text>
             </svg>
           `),
           gravity: 'northwest',
