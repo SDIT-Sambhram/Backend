@@ -23,7 +23,7 @@ jobs:
           npm prune --production # Keep only production dependencies if necessary
 
       - name: Create ZIP file for Lambda function
-        run: zip -r code.zip . -x ".git/*" # Include node_modules in the ZIP
+        run: zip -r code.zip . -x ".git/*" "node_modules/*" # Include node_modules in the ZIP
 
       - name: Deploy to AWS Lambda
         uses: imehedi/actions-awscli-v2@latest
