@@ -69,13 +69,12 @@ export const registerParticipant = [
                 event_id: reg.event_id,
                 order_id: order.id,
                 amount,
-                payment_status: 'pending',
                 registration_date: new Date(),
             }));
 
             if (isNewParticipant) {
                 // Create a new participant
-                participant = new Participant({ name, usn, phone, college, qr_code: "pending", registrations: newRegistrations });
+                participant = new Participant({ name, usn, phone, college, registrations: newRegistrations });
             } else {
                 // Check if participant can register for the new events
                 const { canRegister, message } = canRegisterForEvents(participant, newRegistrations);

@@ -1,13 +1,15 @@
 import path from 'path';
 import sharp from 'sharp';
 import { fileURLToPath } from 'url';
+import { generateQRCode } from '../helpers/qrCodeGenerator.js'; 
+
 
 // Define __dirname for ES modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Function to update ticket image with participant details
-export const updateTicketImage = async (name, phone, qr_code) => {
+export const updateTicketImage = async (name, phone) => {
   try {
     // Path to the base ticket image
     const baseTicketPath = path.join(__dirname, '../images/tickets/1.png');
@@ -17,12 +19,8 @@ export const updateTicketImage = async (name, phone, qr_code) => {
       throw new Error('QR code is required');
     }
 
-    // Convert the QR code from a Base64 string to a Buffer if necessary
-    let qrCodeBuffer = qr_code;
-    if (qr_code.startsWith('data:image/png;base64,')) {
-      const base64Data = qr_code.replace(/^data:image\/png;base64,/, '');
-      qrCodeBuffer = Buffer.from(base64Data, 'base64');
-    }
+    // Generate the QR code buffer using the provided data
+    let qrCodeBuffer = await generateQRCode(participantId);
 
     // Ensure the base ticket image exists
     const ticketExists = await sharp(baseTicketPath).metadata().then(() => true).catch(() => false);
@@ -32,11 +30,11 @@ export const updateTicketImage = async (name, phone, qr_code) => {
 
     // Create the updated image with participant details and QR code
     const updatedImageBuffer = await sharp(baseTicketPath)
-      .resize(1875, 5142)  // Adjust dimensions as needed
+      .resize(300, 825)  // Adjust dimensions as needed
       .composite([
         {
           input: Buffer.from(`
-            <svg width="800" height="600">
+            <svg width="270" height="200">
               <style>
                 .name { font-size: 24px; fill: #000000; font-weight: bold; }
                 .phone { font-size: 20px; fill: #000000; }
