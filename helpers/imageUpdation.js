@@ -49,7 +49,7 @@ export const updateTicketImage = async (participantId, name, phone, price, event
                 .price { font-size: 20px; fill: #E4E3E3; font-family: 'Montserrat'; }
               </style>
               <text x="13" y="450" class="eventCount">${eventCount} </text>
-              <text x="13" y="450" class="price">${price}</text>
+              <text x="13" y="500" class="price">${price}</text>
             </svg>
           `),
           gravity: 'northwest',
@@ -57,7 +57,7 @@ export const updateTicketImage = async (participantId, name, phone, price, event
         {
           input: qrCodeBuffer,
           top: 620,  // Positioned closer to the bottom
-          left: 750,  // Center the QR code horizontally within the image width
+          left: 75,  // Center the QR code horizontally within the image width
         },
       ])
       .toBuffer();  // Generate the image buffer without saving to file
