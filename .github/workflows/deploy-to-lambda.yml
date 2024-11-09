@@ -21,18 +21,3 @@ jobs:
         run: |
           npm install
           npm prune --production # Keep only production dependencies if necessary
-
-      - name: Create ZIP file for Lambda function
-        run: zip -r code.zip . -x ".git/*" "node_modules/*" # Include node_modules in the ZIP
-
-      - name: Deploy to AWS Lambda
-        uses: imehedi/actions-awscli-v2@latest
-        with:
-          args: |
-            lambda update-function-code
-            --function-name arn:aws:lambda:ap-south-1:577638369990:function:sambhram-backend
-            --zip-file fileb://code.zip
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_DEFAULT_REGION: ${{ secrets.AWS_REGION }}
