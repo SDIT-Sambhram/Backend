@@ -40,10 +40,12 @@ export const razorpayWebhook = async (req, res) => {
 
          // Calculate registration count
          const eventCount = participant.registrations.filter(reg => reg.payment_status === 'paid').length;
-         
+        
+        let imageUrl = "";
+
          // Generate ticket image if payment is successful
          if (paymentStatus === 'captured') {
-            const imageUrl = await generateTicket(participant._id, participant.name, phone, price, eventCount);
+            imageUrl = await generateTicket(participant._id, participant.name, phone, price, eventCount);
             console.log(`Ticket image URL: ${imageUrl}`);
         }
 
