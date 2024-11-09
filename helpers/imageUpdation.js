@@ -1,8 +1,7 @@
 import path from 'path';
 import sharp from 'sharp';
 import { fileURLToPath } from 'url';
-import { generateQRCode } from '../helpers/qrCodeGenerator.js'; 
-
+import { generateQRCode } from '../helpers/qrCodeGenerator.js';
 
 // Define __dirname for ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -14,11 +13,11 @@ export const updateTicketImage = async (participantId, name, phone, price, event
     // Path to the base ticket image
     const baseTicketPath = path.join(__dirname, '../images/tickets/1.png');
 
-     // Generate the QR code base64 string using the provided data
-     let qrCodeBase64 = await generateQRCode(participantId);
+    // Generate the QR code base64 string using the provided data
+    let qrCodeBase64 = await generateQRCode(participantId);
 
-     // Convert the base64 QR code string to a buffer
-     const qrCodeBuffer = Buffer.from(qrCodeBase64, 'base64');
+    // Convert the base64 QR code string to a buffer
+    const qrCodeBuffer = Buffer.from(qrCodeBase64, 'base64');
 
     // Ensure the base ticket image exists
     const ticketExists = await sharp(baseTicketPath).metadata().then(() => true).catch(() => false);
@@ -34,11 +33,24 @@ export const updateTicketImage = async (participantId, name, phone, price, event
           input: Buffer.from(`
             <svg width="270" height="200">
               <style>
-                .name { font-size: 24px; fill: #000000; font-weight: bold; }
-                .phone { font-size: 20px; fill: #000000; }
+                .name { font-size: 24px; fill: #FFFFFF; font-weight: bold; font-family: 'Montserrat'; }
+                .phone { font-size: 20px; fill: #FFFFFF; font-family: 'Montserrat'; }
               </style>
               <text x="50" y="50" class="name">Name: ${name}</text>
               <text x="50" y="100" class="phone">Phone: ${phone}</text>
+            </svg>
+          `),
+          gravity: 'northwest',
+        },
+        {
+          input: Buffer.from(`
+            <svg width="270" height="200">
+              <style>
+                .price { font-size: 24px; fill: #FFFFFF; font-weight: bold; font-family: 'Montserrat'; }
+                .eventCount { font-size: 20px; fill: #FFFFFF; font-family: 'Montserrat'; }
+              </style>
+              <text x="50" y="110" class="price">Price: ${price}</text>
+              <text x="50" y="150" class="eventCount">Event Count: ${eventCount}</text>
             </svg>
           `),
           gravity: 'northwest',

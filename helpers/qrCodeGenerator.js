@@ -4,13 +4,14 @@ export const generateQRCode = async (participantId) => {
   try {
     const qrUrl = `http://localhost:8081/verify/${participantId}`;
     
-    // Generate QR code with transparent background as a base64 string
+    // Generate QR code with white color for visibility as a base64 string
     const qrCodeDataUrl = await QRCode.toDataURL(qrUrl, {
       color: {
-        dark: '#000000',    // Black QR code color
+        dark: '#FFFFFF',    // White QR code color for high visibility
         light: '#00000000'  // Transparent background
       },
-      margin: 1
+      margin: 1,
+      width: 300  // Adjust width to increase the QR code size, if needed
     });
 
     // Remove the "data:image/png;base64," prefix and return only the base64 string
