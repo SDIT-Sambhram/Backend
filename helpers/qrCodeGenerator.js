@@ -7,11 +7,11 @@ export const generateQRCode = async (participantId) => {
     // Generate QR code with white color for visibility as a base64 string
     const qrCodeDataUrl = await QRCode.toDataURL(qrUrl, {
       color: {
-        dark: '#FFFFFF',    // White QR code color for high visibility
+        dark: '#000401',    // White QR code color for high visibility
         light: '#00000000'  // Transparent background
       },
       margin: 1,
-      width: 100  // Adjust width to increase the QR code size, if needed
+      width: 200  // Adjust width to increase the QR code size, if needed
     });
 
     // Remove the "data:image/png;base64," prefix and return only the base64 string
