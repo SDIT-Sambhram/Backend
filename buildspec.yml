@@ -1,7 +1,7 @@
 phases:
   install:
     runtime-versions:
-      nodejs: 14
+      nodejs: 20
     commands:
       - echo Installing dependencies...
       - npm install --production
