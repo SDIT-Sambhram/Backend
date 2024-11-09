@@ -13,7 +13,7 @@ provider:
 
 functions:
   app:
-    handler: sambhram-backend/app.handler  # Ensure `app.js` is the entry point and `handler` is the function export
+    handler: app.handler  # Ensure `app.js` is the entry point and `handler` is the function export
     events:
       - httpApi: '*'  # This will route all HTTP paths to this Lambda
 
@@ -24,5 +24,6 @@ package:
     - '**'                # Include all other project files
 
 plugins:
-  - serverless-dotenv-plugin # To use environment variables from .env
+  - serverless-offline
+
 
