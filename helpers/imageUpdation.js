@@ -14,8 +14,11 @@ export const updateTicketImage = async (participantId, name, phone, price, event
     // Path to the base ticket image
     const baseTicketPath = path.join(__dirname, '../images/tickets/1.png');
 
-    // Generate the QR code buffer using the provided data
-    let qrCodeBuffer = await generateQRCode(participantId);
+     // Generate the QR code base64 string using the provided data
+     let qrCodeBase64 = await generateQRCode(participantId);
+
+     // Convert the base64 QR code string to a buffer
+     const qrCodeBuffer = Buffer.from(qrCodeBase64, 'base64');
 
     // Ensure the base ticket image exists
     const ticketExists = await sharp(baseTicketPath).metadata().then(() => true).catch(() => false);
