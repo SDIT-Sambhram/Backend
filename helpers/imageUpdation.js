@@ -48,7 +48,7 @@ export const updateTicketImage = async (participantId, name, phone, price, event
               <style>
                 .price { font-size: 24px; fill: #FFFFFF; font-family: 'Montserrat'; } 
               </style>
-              <text x="50" y="130" class="price">${eventCount}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;${price}</text>
+              <text x="50" y="130" class="price">${eventCount}          ${price}</text>
             </svg>
           `),
           gravity: 'northwest',
