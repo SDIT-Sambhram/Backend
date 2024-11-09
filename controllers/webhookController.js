@@ -24,7 +24,7 @@ export const razorpayWebhook = async (req, res) => {
     const { order_id } = payload.payment.entity;
     const phone = payload.payment.entity.notes.phone;
     const paymentStatus = payload.payment.entity.status;
-    const price = payload.payment.entity.amount;  // assuming 'amount' is in smallest currency unit (e.g., paise for INR)
+    const price = (payload.payment.entity.amount) / 100;  // assuming 'amount' is in smallest currency unit (e.g., paise for INR)
 
     console.log(payload);
 
@@ -38,16 +38,9 @@ export const razorpayWebhook = async (req, res) => {
             throw new Error('Participant not found');
         }
 
-         // Calculate registration count
-         const eventCount = participant.registrations.filter(reg => reg.payment_status === 'paid').length;
-        
-        let imageUrl = "";
+        // Calculate registration count
 
-         // Generate ticket image if payment is successful
-         if (paymentStatus === 'captured') {
-            imageUrl = await generateTicket(participant._id, participant.name, phone, price, eventCount);
-            console.log(`Ticket image URL: ${imageUrl}`);
-        }
+
 
         // Flag to check if any registration was updated
         let registrationUpdated = false;
@@ -63,6 +56,24 @@ export const razorpayWebhook = async (req, res) => {
             }
         }
 
+        const eventCount = participant.registrations.filter(reg => reg.payment_status === 'paid').length;
+
+        // Generate ticket image if payment is successful
+        if (paymentStatus === 'captured') {
+            imageUrl = await generateTicket(participant._id, participant.name, phone, price, eventCount);
+            console.log(`Ticket image URL: ${imageUrl}`);
+            
+            // Loop through all registrations to update matching entries
+            for (let reg of participant.registrations) {
+                if (reg.order_id === order_id && (reg.payment_status === null || reg.payment_status === 'failed')) {
+                    // Update imageUrl and registration date
+                    reg.ticket_url = imageUrl || null;
+                    registrationUpdated = true;
+                }
+            }
+        }
+
+
         if (!registrationUpdated) {
             throw new Error('No matching pending registration found for the provided order_id');
         }
@@ -70,7 +81,7 @@ export const razorpayWebhook = async (req, res) => {
         // Save participant with updated registration details
         await participant.save({ session });
 
-       
+
 
         await session.commitTransaction();
 

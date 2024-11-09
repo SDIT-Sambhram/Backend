@@ -46,11 +46,9 @@ export const updateTicketImage = async (participantId, name, phone, price, event
           input: Buffer.from(`
             <svg width="270" height="200">
               <style>
-                .price { font-size: 24px; fill: #FFFFFF; font-weight: bold; font-family: 'Montserrat'; }
-                .eventCount { font-size: 20px; fill: #FFFFFF; font-family: 'Montserrat'; }
+                .price { font-size: 24px; fill: #FFFFFF; font-family: 'Montserrat'; } 
               </style>
-              <text x="50" y="110" class="price">Price: ${price}</text>
-              <text x="50" y="150" class="eventCount">Event Count: ${eventCount}</text>
+              <text x="50" y="130" class="price">${eventCount}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;${price}</text>
             </svg>
           `),
           gravity: 'northwest',
