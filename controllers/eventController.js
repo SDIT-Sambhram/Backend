@@ -20,8 +20,7 @@ const getAllEventDetails = async (req, res) => {
         // If not in cache or cache expired, fetch from DB
         const events = await Event.find()
             .select('-__v')  // Exclude version field
-            .lean()          // Convert to plain objects
-            .cache(CACHE_TTL); // Enable mongoose cache if you have cache plugin
+            .lean();         // Convert to plain objects
 
         if (!events) {
             return res.status(404).json({
