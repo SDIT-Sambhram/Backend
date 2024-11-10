@@ -7,7 +7,7 @@ export const generateQRCode = async (participantId) => {
     // Generate QR code with white color for visibility as a base64 string
     const qrCodeDataUrl = await QRCode.toDataURL(qrUrl, {
       color: {
-        dark: '#000401',    // White QR code color for high visibility
+        dark: '#000401',    // QR code color for high visibility
         light: '#00000000'  // Transparent background
       },
       margin: 1,
