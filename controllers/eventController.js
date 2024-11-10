@@ -24,7 +24,6 @@ const getAllEventDetails = async (req, res) => {
 
         if (!events) {
             return res.status(404).json({
-                success: false,
                 message: 'No events found'
             });
         }
@@ -41,16 +40,11 @@ const getAllEventDetails = async (req, res) => {
             'ETag': new mongoose.Types.ObjectId().toString() // Use 'new' keyword
         });
 
-        return res.status(200).json({
-            success: true,
-            count: events.length,
-            data: events
-        });
+        return res.status(200).json(events);
 
     } catch (error) {
         console.error("Error retrieving event details:", error);
         return res.status(500).json({
-            success: false,
             message: 'Error retrieving events',
             error: process.env.NODE_ENV === 'development' ? error.message : undefined
         });
