@@ -16,7 +16,7 @@ connectDB();
 const app = express();
 
 // Middleware setup
-app.use(cors());
+app.use(cors({ origin: 'http://sambhram-frontend.s3-website.ap-south-1.amazonaws.com'}));
 app.use(express.json());
 app.use(morgan('dev'));
 
