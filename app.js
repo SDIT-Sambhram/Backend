@@ -26,5 +26,8 @@ app.get("/", (request, response) => {
     response.send("Server is up and running");
 });
 
+app.listen(3000, () => {
+    console.log("Server is running on port 3000");
+});
 // Export the app as a Lambda-compatible handler
 export const handler = serverless(app);
