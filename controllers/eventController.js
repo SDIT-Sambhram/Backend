@@ -38,7 +38,7 @@ const getAllEventDetails = async (req, res) => {
         // Set appropriate cache headers
         res.set({
             'Cache-Control': `public, max-age=${CACHE_TTL / 1000}`,
-            'ETag': mongoose.Types.ObjectId().toString()
+            'ETag': new mongoose.Types.ObjectId().toString() // Use 'new' keyword
         });
 
         return res.status(200).json({
