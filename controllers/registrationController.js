@@ -7,87 +7,108 @@ import { validateInputs } from '../helpers/validation.js';
 
 const MAX_EVENTS = 4;
 
-// Helper function to check event registration limits
-const canRegisterForEvents = (participant, newRegistrations) => {
-    // Get unique event IDs from existing registrations, excluding failed payments
-    const existingEventIds = new Set(
-        participant.registrations
-            .filter(reg => reg.payment_status !== 'failed')
-            .map(reg => reg.event_id.toString())
-    );
-
-    const totalRegisteredEvents = existingEventIds.size;
-
-    // Check if the participant has reached the max events limit
-    if (totalRegisteredEvents >= MAX_EVENTS) {
-        return { canRegister: false, message: `User can register for up to ${MAX_EVENTS} unique events` };
+// Optimized for O(1) lookup using Set
+const canRegisterForEvents = (existingRegistrations, newRegistrations) => {
+    // Pre-filter failed payments - O(n) where n is number of existing registrations
+    const activeRegistrations = existingRegistrations.filter(reg => reg.payment_status !== 'failed');
+    
+    if (activeRegistrations.length >= MAX_EVENTS) {
+        return { 
+            canRegister: false, 
+            message: `User can register for up to ${MAX_EVENTS} unique events` 
+        };
     }
 
-    // Identify any conflicting event IDs with new registrations
-    const conflictingEventIds = newRegistrations
-        .map(reg => reg.event_id.toString())
-        .filter(eventId => existingEventIds.has(eventId));
-
-    if (conflictingEventIds.length > 0) {
-        return { canRegister: false, message: `User has already registered for the following events`};
+    // Create Set for O(1) lookup - O(n) one-time operation
+    const existingEventIds = new Set(activeRegistrations.map(reg => reg.event_id.toString()));
+    
+    // Check for conflicts - O(m) where m is number of new registrations
+    for (const reg of newRegistrations) {
+        if (existingEventIds.has(reg.event_id.toString())) {
+            return { 
+                canRegister: false, 
+                message: 'User has already registered for the following events' 
+            };
+        }
     }
 
     return { canRegister: true };
 };
 
-// Unified registration controller
 export const registerParticipant = [
-    // registrationLimiter, // Rate limiting middleware
-    // validateInputs, // Input validation middleware
+    // registrationLimiter,
+    // validateInputs,
     async (req, res) => {
-        const session = await mongoose.startSession();
-        session.startTransaction();
-
+        let session;
         try {
-            const errors = validationResult(req);
-            if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
-
-            console.log('Request body:', req.body);
-
-            const { name, usn, college, phone, amount, registrations } = req.body;
-
-            // Validate required fields
-            if (!name || !usn || !phone || !college || !registrations || registrations.length === 0) {
+            // Quick validation checks - O(1)
+            if (!req.body.name || !req.body.usn || !req.body.phone || !req.body.college || !req.body.registrations?.length) {
                 return res.status(400).json({ message: "Missing required fields" });
             }
 
-            // Check if participant already exists
-            let participant = await Participant.findOne({ phone }).session(session);
-            const isNewParticipant = !participant;
+            const errors = validationResult(req);
+            if (!errors.isEmpty()) {
+                return res.status(400).json({ errors: errors.array() });
+            }
 
-            // Create a new order for the registration
-            const order = await createOrder(amount, phone, registrations);
-            if (!order) throw new Error('Order creation failed');
+            const { name, usn, college, phone, amount, registrations } = req.body;
 
-            // Prepare new registrations
+            // Start both operations concurrently - Parallel execution
+            const [existingParticipant, order] = await Promise.all([
+                // Only fetch necessary fields using projection
+                Participant.findOne(
+                    { phone }, 
+                    { 'registrations.event_id': 1, 'registrations.payment_status': 1 }
+                ).lean(),
+                createOrder(amount, phone, registrations)
+            ]);
+
+            if (!order) {
+                throw new Error('Order creation failed');
+            }
+
+            // Prepare registrations with order ID - O(m)
             const newRegistrations = registrations.map(reg => ({
                 event_id: reg.event_id,
                 order_id: order.id,
                 amount,
-                registration_date: new Date(),
+                registration_date: new Date()
             }));
 
-            if (isNewParticipant) {
-                // Create a new participant
-                participant = new Participant({ name, usn, phone, college, registrations: newRegistrations });
+            session = await mongoose.startSession();
+            session.startTransaction();
+
+            if (existingParticipant) {
+                const { canRegister, message } = canRegisterForEvents(
+                    existingParticipant.registrations, 
+                    newRegistrations
+                );
+
+                if (!canRegister) {
+                    await session.endSession();
+                    return res.status(400).json({ message });
+                }
+
+                // Single atomic update operation - O(1)
+                await Participant.updateOne(
+                    { phone },
+                    { $push: { registrations: { $each: newRegistrations } } },
+                    { session }
+                );
             } else {
-                // Check if participant can register for the new events
-                const { canRegister, message } = canRegisterForEvents(participant, newRegistrations);
-                if (!canRegister) return res.status(400).json({ message });
-                participant.registrations.push(...newRegistrations);
+                // Single insert operation - O(1)
+                await Participant.create([{
+                    name,
+                    usn,
+                    phone,
+                    college,
+                    registrations: newRegistrations
+                }], { session });
             }
 
-            // Save participant data in the session
-            await participant.save({ session });
             await session.commitTransaction();
-
-            // Respond with success message and order details
-            res.status(201).send({
+            
+            return res.status(201).json({
                 success: true,
                 message: 'User registered successfully, awaiting payment confirmation',
                 orderId: order.id,
@@ -96,14 +117,18 @@ export const registerParticipant = [
             });
 
         } catch (error) {
-            // Check if the session is in a transaction before aborting
-            if (session.inTransaction()) {
+            if (session?.inTransaction()) {
                 await session.abortTransaction();
             }
             console.error('Error during registration:', error);
-            res.status(500).json({ message: 'Internal Server Error', error: error.message });
+            return res.status(500).json({ 
+                message: 'Internal Server Error', 
+                error: error.message 
+            });
         } finally {
-            session.endSession();
+            if (session) {
+                await session.endSession();
+            }
         }
     }
 ];
