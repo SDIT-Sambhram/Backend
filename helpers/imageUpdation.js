@@ -56,7 +56,7 @@ export const updateTicketImage = async (participantId, name, phone, price, event
         },
         {
           input: qrCodeBuffer,
-          top: 650,  // Positioned closer to the bottom
+          top: 660,  // Positioned closer to the bottom
           left: 75,  // Center the QR code horizontally within the image width
         },
       ])
