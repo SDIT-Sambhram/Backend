@@ -30,7 +30,7 @@ export const updateTicketImage = async (participantId, name, phone, price, event
       .composite([
         {
           input: Buffer.from(`
-            <svg width="300" height="825">
+            <svg width="300" height="825" xmlns="http://www.w3.org/2000/svg">
               <style>
                 .name { font-size: 18px; fill: #E4E3E3; font-family: 'Montserrat'; }
                 .phone { font-size: 18px; fill: #E4E3E3; font-family: 'Montserrat'; }
@@ -38,12 +38,12 @@ export const updateTicketImage = async (participantId, name, phone, price, event
               <text x="15" y="460" class="name">Name: ${name}</text>
               <text x="15" y="500" class="phone">Phone: ${phone}</text>
             </svg>
-          `),
+          `, 'utf-8'),
           gravity: 'northwest',
         },
         {
           input: Buffer.from(`
-            <svg width="300" height="825">
+            <svg width="300" height="825" xmlns="http://www.w3.org/2000/svg">
               <style>
                 .eventCount { font-size: 18px; fill: #E4E3E3; font-family: 'Montserrat'; }
                 .price { font-size: 20px; fill: #E4E3E3; font-family: 'Montserrat'; }
@@ -51,7 +51,7 @@ export const updateTicketImage = async (participantId, name, phone, price, event
               <text x="65" y="540" class="eventCount">${eventCount} </text>
               <text x="150" y="540" class="price">${price}</text>
             </svg>
-          `),
+          `, 'utf-8'),
           gravity: 'northwest',
         },
         {
