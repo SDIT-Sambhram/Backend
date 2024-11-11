@@ -1,28 +1,27 @@
 import express from "express";
-import Colors from "colors";
 import dotenv from "dotenv";
 import morgan from "morgan";
 import connectDB from "./configs/db.js";
-import authRoutes from "./routes/authRoutes.js"
-import cors from "cors";
+import authRoutes from "./routes/authRoutes.js";
+import serverless from "serverless-http"; // Import serverless-http
 
-//config dotenv
+// Config dotenv
 dotenv.config();
 
-//database config
+// Database config
 connectDB();
 
-//rest object
+// Initialize express app
 const app = express();
 
-// middleWares
-app.use(cors());
-app.use(express.json());
-app.use(morgan('dev'));
+// Middleware setup
+app.use(express.json()); // Middleware for parsing JSON data
+app.use(morgan("dev"));   // Logging middleware
 
-//routes
-app.use('/api/v1/auth', authRoutes);
+// Routes
+app.use("/api/v1/auth", authRoutes);
 
+<<<<<<< HEAD
 //rest api
 app.get('/', (request, response) => {
     response.send("Welcome to our Sambhram")
@@ -35,3 +34,12 @@ const PORT = process.env.PORT || 8081;
 app.listen(PORT, '0.0.0.0',() => {
     console.log(`Server Running on ${PORT}`.bgCyan.white);
 })
+=======
+// Root endpoint
+app.get("/", (request, response) => {
+    response.send("Server is up and running");
+});
+
+// Export the app as a Lambda-compatible handler
+export const handler = serverless(app);
+>>>>>>> 397c6cb06723b7f1df7677d88c65d90bc8316741

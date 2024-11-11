@@ -2,7 +2,7 @@ import razorpayInstance from "../configs/razorpay.js";
 import crypto from "crypto";
 
 // Create an order
-export const createOrder = async (amount, phone) => {
+export const createOrder = async (amount, phone, registrations) => {
     try {
 
         const options = {
@@ -11,6 +11,7 @@ export const createOrder = async (amount, phone) => {
             receipt: `receipt_order_${Date.now()}`,  // Unique identifier for tracking orders
             notes: {
               phone: phone,
+              registrations: registrations,
             },
           };
 

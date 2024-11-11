@@ -5,12 +5,12 @@ const ParticipantSchema = new mongoose.Schema({
    usn: { type: String, required: true },
    phone: { type: String, required: true, unique: true },
    college: { type: String, required: true },
-   qr_code: { type: String, required: true },
    registrations: [{
       event_id: { type: mongoose.Schema.Types.ObjectId, required: true },
-      order_id: { type: String, required: true },
+      ticket_url: { type: String, default: null},
       amount: { type: Number, required: true },
-      payment_status: { type: String, enum: ['paid', 'pending', 'failed'], required: true },
+      order_id: { type: String, default: null },
+      payment_status: { type: String, enum: ['paid', 'failed'], default: null },
       registration_date: { type: Date, default: Date.now },
    }]
 }, {
