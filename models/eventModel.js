@@ -1,44 +1,17 @@
-import mongoose from "mongoose";
+import mongoose from 'mongoose';
 
-// Unified Event Schema
-const EventSchema = new mongoose.Schema({
-    name: { 
-        type: String, 
-        required: true,
-        trim: true  // Automatically trims whitespace
-    },  // Name of the event
-    category: { 
-        type: String, 
-        enum: ['Cultural', 'Technical', 'Special'], 
-        required: true 
-    },  // Category of the event
-    event_type: { 
-        type: String, 
-        enum: ['team', 'individual'], 
-        required: true 
-    },  // Event type: "team" or "individual"
-    description: { 
-        type: String, 
-        required: true,
-        trim: true  // Automatically trims whitespace
-    },  // Description of the event
-    event_date: { 
-        type: Date, 
-        required: true 
-    },  // Date of the event
-    venue: { 
-        type: String, 
-        required: true,
-        trim: true  // Automatically trims whitespace
-    },  // Venue of the event
-    price: { 
-        type: Number, 
-        required: true,
-        min: 0      // Ensures price cannot be negative
-    }   // Price of the event
-}, { timestamps: true });  // Automatically manage createdAt and updatedAt timestamps
+const eventSchema = new mongoose.Schema({
+  eventName: { type: String, required: true },
+  eventType: { type: String, required: true }, // Cultural, Technical, or Special
+  description: { type: String, required: true },
+  date: { type: Date, required: true },
+  time: { type: String, required: true },
+  venue: { type: String, required: true },
+  studentCoordinator: { type: String, required: true },
+  studentCoordinatorContact: { type: String, required: true },
+  rules: { type: [String], required: true }  
+});
 
-// Create the Event model
-const Event = mongoose.models.event || mongoose.model("Event", EventSchema);
+const Event = mongoose.model('event', eventSchema);
 
 export default Event;
