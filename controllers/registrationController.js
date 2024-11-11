@@ -78,6 +78,7 @@ export const registerParticipant = [
             session = await mongoose.startSession();
             session.startTransaction();
 
+            let participantId;
             if (existingParticipant) {
                 const { canRegister, message } = canRegisterForEvents(
                     existingParticipant.registrations, 
@@ -95,15 +96,19 @@ export const registerParticipant = [
                     { $push: { registrations: { $each: newRegistrations } } },
                     { session }
                 );
+
+                participantId = existingParticipant._id; // Use existing participant ID
             } else {
-                // Single insert operation - O(1)
-                await Participant.create([{
+                // Insert new participant and capture the created ID
+                const newParticipant = await Participant.create([{
                     name,
                     usn,
                     phone,
                     college,
                     registrations: newRegistrations
                 }], { session });
+                
+                participantId = newParticipant[0]._id; // Capture the new participant's ID
             }
 
             await session.commitTransaction();
@@ -114,6 +119,7 @@ export const registerParticipant = [
                 orderId: order.id,
                 amount: order.amount,
                 currency: order.currency,
+                participantId // Send participantId to the frontend
             });
 
         } catch (error) {
