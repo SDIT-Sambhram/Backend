@@ -21,20 +21,6 @@ app.use(morgan("dev"));   // Logging middleware
 // Routes
 app.use("/api/v1/auth", authRoutes);
 
-<<<<<<< HEAD
-//rest api
-app.get('/', (request, response) => {
-    response.send("Welcome to our Sambhram")
-})
-
-//port
-
-const PORT = process.env.PORT || 8081;
-1
-app.listen(PORT, '0.0.0.0',() => {
-    console.log(`Server Running on ${PORT}`.bgCyan.white);
-})
-=======
 // Root endpoint
 app.get("/", (request, response) => {
     response.send("Server is up and running");
@@ -42,4 +28,3 @@ app.get("/", (request, response) => {
 
 // Export the app as a Lambda-compatible handler
 export const handler = serverless(app);
->>>>>>> 397c6cb06723b7f1df7677d88c65d90bc8316741
