@@ -10,7 +10,7 @@ const MAX_EVENTS = 4;
 // Optimized for O(1) lookup using Set
 const canRegisterForEvents = (existingRegistrations, newRegistrations) => {
     // Pre-filter failed payments - O(n) where n is number of existing registrations
-    const activeRegistrations = existingRegistrations.filter(reg => reg.payment_status !== 'failed' && reg.payment_status !== 'created');
+    const activeRegistrations = existingRegistrations.filter(reg => reg.payment_status !== 'failed' && reg.payment_status !== null);
     
     if (activeRegistrations.length >= MAX_EVENTS) {
         return { 
@@ -72,7 +72,6 @@ export const registerParticipant = [
                 event_id: reg.event_id,
                 order_id: order.id,
                 amount,
-                payment_status: "Created",
                 registration_date: new Date()
             }));
 
