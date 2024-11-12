@@ -48,7 +48,7 @@ export const razorpayWebhook = async (req, res) => {
             { 
                 phone,
                 'registrations.order_id': { $in: order_id.split(',') },
-                'registrations.payment_status': { $in: ['created', 'failed'] }
+                'registrations.payment_status': { $in: [null, 'failed'] }
             },
             {
                 name: 1,
