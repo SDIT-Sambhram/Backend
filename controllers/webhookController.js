@@ -29,7 +29,6 @@ export const razorpayWebhook = async (req, res) => {
     try {
         // Extract all necessary data upfront
         const { payload } = req.body;
-        console.log('Webhook payload:', payload);
         const { 
             order_id,
             notes: { phone, registrations: events },
@@ -105,6 +104,8 @@ export const razorpayWebhook = async (req, res) => {
         await session.commitTransaction();
 
         console.log(`Payment ${paymentStatus} processed for order: ${order_id}`);
+        console.log('Webhook payload:', payload);
+
         return res.status(200).json({ 
             message: 'Webhook processed successfully' 
         });
