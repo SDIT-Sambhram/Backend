@@ -26,6 +26,9 @@ export const updateTicketImage = async (participantId, name, phone, price, event
     }
     console.log('Base ticket image exists.');
 
+    // Base64-encoded Montserrat font
+    const montserratFontBase64 = 'data:font/ttf;base64,AAEAAAARAQAABAAwRFNJRwAAAAEAAA...'; // Truncated for brevity
+
     // Create the updated image with participant details and QR code
     const updatedImageBuffer = await sharp(baseTicketPath)
       .composite([
@@ -35,7 +38,7 @@ export const updateTicketImage = async (participantId, name, phone, price, event
               <style>
                 @font-face {
                   font-family: 'Montserrat';
-                  src: url('https://fonts.gstatic.com/s/montserrat/v15/4qk3rYp1u6qU5QmGk5u8NQ.ttf') format('truetype');
+                  src: url('${montserratFontBase64}') format('truetype');
                 }
                 .name { font-size: 18px; fill: #E4E3E3; font-family: 'Montserrat'; }
                 .phone { font-size: 18px; fill: #E4E3E3; font-family: 'Montserrat'; }
@@ -52,7 +55,7 @@ export const updateTicketImage = async (participantId, name, phone, price, event
               <style>
                 @font-face {
                   font-family: 'Montserrat';
-                  src: url('https://fonts.gstatic.com/s/montserrat/v15/4qk3rYp1u6qU5QmGk5u8NQ.ttf') format('truetype');
+                  src: url('${montserratFontBase64}') format('truetype');
                 }
                 .eventCount { font-size: 18px; fill: #E4E3E3; font-family: 'Montserrat'; }
                 .price { font-size: 20px; fill: #E4E3E3; font-family: 'Montserrat'; }
