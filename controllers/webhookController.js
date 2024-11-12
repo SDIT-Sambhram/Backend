@@ -7,7 +7,6 @@ import { generateTicket } from './ticketGeneration.js';
 dotenv.config();
 
 export const razorpayWebhook = async (req, res) => {
-    // Early validation of signature
     const secret = process.env.RAZORPAY_WEBHOOK_SECRET;
     const signature = req.headers['x-razorpay-signature'];
     
@@ -27,7 +26,6 @@ export const razorpayWebhook = async (req, res) => {
 
     let session;
     try {
-        // Extract all necessary data upfront
         const { payload } = req.body;
         console.log('Webhook payload:', payload);
         const { 
@@ -40,11 +38,9 @@ export const razorpayWebhook = async (req, res) => {
         const price = amount / 100;
         const isPaid = paymentStatus === 'captured';
 
-        // Start transaction and database operations in parallel
         session = await mongoose.startSession();
         session.startTransaction();
 
-        // Use projection and lean() for efficient query
         const participant = await Participant.findOne(
             { 
                 phone,
@@ -62,32 +58,28 @@ export const razorpayWebhook = async (req, res) => {
             throw new Error('No matching participant or registration found');
         }
 
-        // Generate ticket in parallel if payment is successful
+        const orderIds = order_id.split(',');
         const ticketPromises = isPaid ? 
             participant.registrations
-                .filter(reg => reg.order_id.split(',').includes(order_id))
+                .filter(reg => orderIds.includes(reg.order_id))
                 .map(reg => generateTicket(participant._id, participant.name, phone, price, 1)) : 
             [];
 
-        // Prepare update operations
-        const updateOperations = participant.registrations
-            .filter(reg => reg.order_id.split(',').includes(order_id))
-            .map(reg => ({
-                updateOne: {
-                    filter: {
-                        phone,
-                        'registrations.order_id': reg.order_id
-                    },
-                    update: {
-                        $set: {
-                            'registrations.$.payment_status': isPaid ? 'paid' : 'failed',
-                            'registrations.$.registration_date': new Date()
-                        }
+        const updateOperations = orderIds.map(orderId => ({
+            updateOne: {
+                filter: {
+                    phone,
+                    'registrations.order_id': orderId
+                },
+                update: {
+                    $set: {
+                        'registrations.$.payment_status': isPaid ? 'paid' : 'failed',
+                        'registrations.$.registration_date': new Date()
                     }
                 }
-            }));
+            }
+        }));
 
-        // Wait for ticket generation if applicable
         const imageUrls = await Promise.all(ticketPromises);
         for (let i = 0; i < updateOperations.length; i++) {
             if (imageUrls[i]) {
@@ -95,7 +87,6 @@ export const razorpayWebhook = async (req, res) => {
             }
         }
 
-        // Perform atomic updates
         const result = await Participant.bulkWrite(updateOperations, { session });
 
         if (result.modifiedCount === 0) {
