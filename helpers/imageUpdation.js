@@ -40,7 +40,6 @@ export const updateTicketImage = async (participantId, name, phone, price, event
             <svg width="300" height="825">
               <style>
                 .ticket-info {
-                  font-family: Arial, sans-serif;
                   font-size: 18px;
                   fill: #E4E3E3;
                 }
