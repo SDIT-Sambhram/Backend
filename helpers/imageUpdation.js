@@ -38,13 +38,6 @@ export const updateTicketImage = async (participantId, name, phone, price, event
         {
           input: Buffer.from(`
             <svg width="300" height="825">
-              <style>
-                text {
-                  font-family: 'Arial', sans-serif;
-                  font-size: 18px;
-                  fill: #E4E3E3;
-                }
-              </style>
               <text x="15" y="460">Name: ${name}</text>
               <text x="15" y="500">Phone: ${phone}</text>
             </svg>
@@ -55,10 +48,6 @@ export const updateTicketImage = async (participantId, name, phone, price, event
           input: Buffer.from(`
             <svg width="300" height="825">
               <style>
-                text {
-                  font-family: 'Arial', sans-serif;
-                  fill: #E4E3E3;
-                }
                 .event-count {
                   font-size: 18px;
                 }
