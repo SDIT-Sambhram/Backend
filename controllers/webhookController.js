@@ -7,6 +7,7 @@ import { generateTicket } from './ticketGeneration.js';
 dotenv.config();
 
 export const razorpayWebhook = async (req, res) => {
+    // Early validation of signature
     const secret = process.env.RAZORPAY_WEBHOOK_SECRET;
     const signature = req.headers['x-razorpay-signature'];
     
@@ -26,8 +27,8 @@ export const razorpayWebhook = async (req, res) => {
 
     let session;
     try {
+        // Extract all necessary data upfront
         const { payload } = req.body;
-        console.log('Webhook payload:', payload);
         const { 
             order_id,
             notes: { phone, registrations: events },
@@ -38,9 +39,11 @@ export const razorpayWebhook = async (req, res) => {
         const price = amount / 100;
         const isPaid = paymentStatus === 'captured';
 
+        // Start transaction and database operations in parallel
         session = await mongoose.startSession();
         session.startTransaction();
 
+        // Use projection and lean() for efficient query
         const participant = await Participant.findOne(
             { 
                 phone,
@@ -65,32 +68,34 @@ export const razorpayWebhook = async (req, res) => {
                 .map(reg => generateTicket(participant._id, participant.name, phone, price, 1)) : 
             [];
 
-        const updateOperations = orderIds.map(orderId => ({
-            updateOne: {
-                filter: {
+        const imageUrls = await Promise.all(ticketPromises);
+
+        // Update each matching registration
+        for (const orderId of orderIds) {
+            const updateOperation = {
+                $set: {
+                    'registrations.$.payment_status': isPaid ? 'paid' : 'failed',
+                    'registrations.$.registration_date': new Date()
+                }
+            };
+
+            const imageUrl = imageUrls.shift();
+            if (imageUrl) {
+                updateOperation.$set['registrations.$.ticket_url'] = imageUrl;
+            }
+
+            const result = await Participant.updateOne(
+                { 
                     phone,
                     'registrations.order_id': orderId
                 },
-                update: {
-                    $set: {
-                        'registrations.$.payment_status': isPaid ? 'paid' : 'failed',
-                        'registrations.$.registration_date': new Date()
-                    }
-                }
+                updateOperation,
+                { session }
+            );
+
+            if (result.modifiedCount === 0) {
+                throw new Error(`Failed to update registration for order ID: ${orderId}`);
             }
-        }));
-
-        const imageUrls = await Promise.all(ticketPromises);
-        for (let i = 0; i < updateOperations.length; i++) {
-            if (imageUrls[i]) {
-                updateOperations[i].updateOne.update.$set['registrations.$.ticket_url'] = imageUrls[i];
-            }
-        }
-
-        const result = await Participant.bulkWrite(updateOperations, { session });
-
-        if (result.modifiedCount === 0) {
-            throw new Error('Failed to update registrations');
         }
 
         await session.commitTransaction();
