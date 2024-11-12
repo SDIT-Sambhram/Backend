@@ -13,6 +13,8 @@ export const updateTicketImage = async (participantId, name, phone, price, event
     // Path to the base ticket image
     const baseTicketPath = path.join(__dirname, `../images/tickets/${eventCount}.png`);
 
+    
+
     // Generate the QR code base64 string using the provided data
     const qrCodeBase64 = await generateQRCode(participantId);
     const qrCodeBuffer = Buffer.from(qrCodeBase64, 'base64');
@@ -62,7 +64,7 @@ export const updateTicketImage = async (participantId, name, phone, price, event
       ])
       .toBuffer();  // Generate the image buffer without saving to file
 
-    console.log('Ticket image generated successfully in memory.');
+    console.log('Ticket image generated successfully in memory.', name, phone, price, eventCount);
     return updatedImageBuffer;
 
   } catch (error) {
