@@ -29,6 +29,7 @@ export const razorpayWebhook = async (req, res) => {
     try {
         // Extract all necessary data upfront
         const { payload } = req.body;
+        console.log('Webhook payload:', payload);
         const { 
             order_id,
             notes: { phone, registrations: events },
