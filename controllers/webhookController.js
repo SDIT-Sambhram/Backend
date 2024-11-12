@@ -74,14 +74,14 @@ export const razorpayWebhook = async (req, res) => {
         for (const orderId of orderIds) {
             const updateOperation = {
                 $set: {
-                    'registrations.$.payment_status': isPaid ? 'paid' : 'failed',
-                    'registrations.$.registration_date': new Date()
+                    'registrations.$[elem].payment_status': isPaid ? 'paid' : 'failed',
+                    'registrations.$[elem].registration_date': new Date()
                 }
             };
 
             const imageUrl = imageUrls.shift();
             if (imageUrl) {
-                updateOperation.$set['registrations.$.ticket_url'] = imageUrl;
+                updateOperation.$set['registrations.$[elem].ticket_url'] = imageUrl;
             }
 
             const result = await Participant.updateOne(
@@ -90,7 +90,10 @@ export const razorpayWebhook = async (req, res) => {
                     'registrations.order_id': orderId
                 },
                 updateOperation,
-                { session }
+                { 
+                    session,
+                    arrayFilters: [{ 'elem.order_id': orderId }]
+                }
             );
 
             if (result.modifiedCount === 0) {
