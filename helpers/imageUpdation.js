@@ -36,15 +36,11 @@ export const updateTicketImage = async (participantId, name, phone, price, event
           input: Buffer.from(`
             <svg width="300" height="825">
               <style>
-                @font-face {
-                  font-family: 'Montserrat';
-                  src: url('${montserratFontBase64}') format('truetype');
-                }
                 .name { font-size: 18px; fill: #E4E3E3; font-family: 'Montserrat'; }
                 .phone { font-size: 18px; fill: #E4E3E3; font-family: 'Montserrat'; }
               </style>
-              <text x="15" y="160" class="name">Name: ${name}</text>
-              <text x="15" y="300" class="phone">Phone: ${phone}</text>
+              <text x="15" y="460" class="name">Name: ${name}</text>
+              <text x="15" y="500" class="phone">Phone: ${phone}</text>
             </svg>
           `, 'utf-8'),
           gravity: 'northwest',
@@ -53,10 +49,6 @@ export const updateTicketImage = async (participantId, name, phone, price, event
           input: Buffer.from(`
             <svg width="300" height="825">
               <style>
-                @font-face {
-                  font-family: 'Montserrat';
-                  src: url('${montserratFontBase64}') format('truetype');
-                }
                 .eventCount { font-size: 18px; fill: #E4E3E3; font-family: 'Montserrat'; }
                 .price { font-size: 20px; fill: #E4E3E3; font-family: 'Montserrat'; }
               </style>
