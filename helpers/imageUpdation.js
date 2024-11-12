@@ -1,4 +1,5 @@
 import path from 'path';
+import fs from 'fs';
 import sharp from 'sharp';
 import { fileURLToPath } from 'url';
 import { generateQRCode } from '../helpers/qrCodeGenerator.js';
@@ -20,20 +21,43 @@ export const updateTicketImage = async (participantId, name, phone, price, event
     console.log('QR code generated successfully.', qrCodeBuffer);
 
     // Ensure the base ticket image exists
-    const ticketExists = await sharp(baseTicketPath).metadata().then(() => true).catch(() => false);
+    const ticketExists = await fs.promises.access(baseTicketPath, fs.constants.F_OK)
+      .then(() => true)
+      .catch(() => false);
     if (!ticketExists) {
       throw new Error('Base ticket image not found at the specified path');
     }
     console.log('Base ticket image exists.');
 
+    // Load the base ticket image
+    const baseTicketBuffer = await fs.promises.readFile(baseTicketPath);
+
     // Create the updated image with participant details and QR code
-    const updatedImageBuffer = await sharp(baseTicketPath)
+    const updatedImageBuffer = await sharp(baseTicketBuffer)
       .composite([
         {
           input: Buffer.from(`
             <svg width="300" height="825">
-              <text x="15" y="460" class="text-lg text-[#E4E3E3]">Name: ${name}</text>
-              <text x="15" y="500" class="text-lg text-[#E4E3E3] font-montserrat">Phone: ${phone}</text>
+              <style>
+                text {
+                  font-family: Arial, sans-serif;
+                  fill: #E4E3E3;
+                }
+                .name {
+                  font-size: 18px;
+                }
+                .phone {
+                  font-size: 18px;
+                }
+                .event-count {
+                  font-size: 18px;
+                }
+                .price {
+                  font-size: 20px;
+                }
+              </style>
+              <text x="15" y="460" class="name">Name: ${name}</text>
+              <text x="15" y="500" class="phone">Phone: ${phone}</text>
             </svg>
           `, 'utf-8'),
           gravity: 'northwest',
@@ -41,8 +65,8 @@ export const updateTicketImage = async (participantId, name, phone, price, event
         {
           input: Buffer.from(`
             <svg width="300" height="825">
-              <text x="65" y="540" class="text-lg text-[#E4E3E3] font-montserrat">${eventCount} </text>
-              <text x="150" y="540" class="text-xl text-[#E4E3E3] font-montserrat">${price}</text>
+              <text x="65" y="540" class="event-count">${eventCount}</text>
+              <text x="150" y="540" class="price">${price}</text>
             </svg>
           `, 'utf-8'),
           gravity: 'northwest',
