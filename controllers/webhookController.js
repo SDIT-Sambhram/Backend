@@ -48,7 +48,7 @@ export const razorpayWebhook = async (req, res) => {
             { 
                 phone,
                 'registrations.order_id': { $in: order_id.split(',') },
-                'registrations.payment_status': { $in: [null, 'failed'] }
+                'registrations.payment_status': { $in: ['created', 'failed'] }
             },
             {
                 name: 1,
@@ -65,7 +65,7 @@ export const razorpayWebhook = async (req, res) => {
         const ticketPromises = isPaid ? 
             participant.registrations
                 .filter(reg => orderIds.includes(reg.order_id))
-                .map(reg => generateTicket(participant._id, participant.name, phone, price, 1)) : 
+                .map(reg => generateTicket(participant._id, participant.name, phone, price, events.length)) : 
             [];
 
         const imageUrls = await Promise.all(ticketPromises);

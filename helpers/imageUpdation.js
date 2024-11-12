@@ -26,21 +26,14 @@ export const updateTicketImage = async (participantId, name, phone, price, event
     }
     console.log('Base ticket image exists.');
 
-    // Base64-encoded Montserrat font
-    const montserratFontBase64 = 'data:font/ttf;base64,AAEAAAARAQAABAAwRFNJRwAAAAEAAA...'; // Truncated for brevity
-
     // Create the updated image with participant details and QR code
     const updatedImageBuffer = await sharp(baseTicketPath)
       .composite([
         {
           input: Buffer.from(`
             <svg width="300" height="825">
-              <style>
-                .name { font-size: 18px; fill: #E4E3E3; }
-                .phone { font-size: 18px; fill: #E4E3E3; font-family: 'Montserrat'; }
-              </style>
-              <text x="15" y="460" class="name">Name: ${name}</text>
-              <text x="15" y="500" class="phone">Phone: ${phone}</text>
+              <text x="15" y="460" class="text-lg text-[#E4E3E3]">Name: ${name}</text>
+              <text x="15" y="500" class="text-lg text-[#E4E3E3] font-montserrat">Phone: ${phone}</text>
             </svg>
           `, 'utf-8'),
           gravity: 'northwest',
@@ -48,23 +41,19 @@ export const updateTicketImage = async (participantId, name, phone, price, event
         {
           input: Buffer.from(`
             <svg width="300" height="825">
-              <style>
-                .eventCount { font-size: 18px; fill: #E4E3E3; font-family: 'Montserrat'; }
-                .price { font-size: 20px; fill: #E4E3E3; font-family: 'Montserrat'; }
-              </style>
-              <text x="65" y="540" class="eventCount">${eventCount} </text>
-              <text x="150" y="540" class="price">${price}</text>
+              <text x="65" y="540" class="text-lg text-[#E4E3E3] font-montserrat">${eventCount} </text>
+              <text x="150" y="540" class="text-xl text-[#E4E3E3] font-montserrat">${price}</text>
             </svg>
           `, 'utf-8'),
           gravity: 'northwest',
         },
         {
           input: qrCodeBuffer,
-          top: 660,  // Positioned closer to the bottom
-          left: 75,  // Center the QR code horizontally within the image width
+          top: 660,
+          left: 75,
         },
       ])
-      .toBuffer();  // Generate the image buffer without saving to file
+      .toBuffer();
 
     console.log('Ticket image generated successfully in memory.', name, phone, price, eventCount);
     return updatedImageBuffer;
