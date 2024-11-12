@@ -39,13 +39,14 @@ export const updateTicketImage = async (participantId, name, phone, price, event
           input: Buffer.from(`
             <svg width="300" height="825">
               <style>
-                .ticket-info {
+                text {
+                  font-family: 'Arial', sans-serif;
                   font-size: 18px;
                   fill: #E4E3E3;
                 }
               </style>
-              <text x="15" y="460" class="ticket-info">Name: shuhaib</text>
-              <text x="15" y="500" class="ticket-info">Phone: ${phone}</text>
+              <text x="15" y="460">Name: ${name}</text>
+              <text x="15" y="500">Phone: ${phone}</text>
             </svg>
           `, 'utf-8'),
           gravity: 'northwest',
@@ -54,8 +55,8 @@ export const updateTicketImage = async (participantId, name, phone, price, event
           input: Buffer.from(`
             <svg width="300" height="825">
               <style>
-                .event-info {
-                  font-family: Arial, sans-serif;
+                text {
+                  font-family: 'Arial', sans-serif;
                   fill: #E4E3E3;
                 }
                 .event-count {
@@ -65,8 +66,8 @@ export const updateTicketImage = async (participantId, name, phone, price, event
                   font-size: 20px;
                 }
               </style>
-              <text x="65" y="540" class="event-info event-count">${eventCount}</text>
-              <text x="150" y="540" class="event-info price">${price}</text>
+              <text x="65" y="540" class="event-count">${eventCount}</text>
+              <text x="150" y="540" class="price">${price}</text>
             </svg>
           `, 'utf-8'),
           gravity: 'northwest',
