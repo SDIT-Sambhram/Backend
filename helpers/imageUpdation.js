@@ -3,7 +3,7 @@ import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { generateQRCode } from '../helpers/qrCodeGenerator.js';
 import sharp from 'sharp';
-import { createCanvas, loadImage, registerFont } from 'canvas';
+import { createCanvas } from 'canvas';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -18,19 +18,13 @@ const fileExists = async (filePath) => {
   }
 };
 
-// Load and register Montserrat font for Canvas
-const loadMontserratFont = async () => {
-  const fontPath = path.join(__dirname, '../fonts/Montserrat-Regular.ttf');
-  registerFont(fontPath, { family: 'Montserrat' });
-};
-
 // Helper function to generate QR code image
 const generateQRCodeImage = async (qrCodeBase64) => {
   const qrCodeBuffer = Buffer.from(qrCodeBase64, 'base64');
   return sharp(qrCodeBuffer);
 };
 
-// Helper function to generate text overlay image with Canvas
+// Helper function to generate text overlay image without custom font
 const generateTextImage = async (name, phone, price, eventCount) => {
   const width = 300;
   const height = 825;
@@ -44,7 +38,7 @@ const generateTextImage = async (name, phone, price, eventCount) => {
   
   // Set text properties
   context.fillStyle = 'white';
-  context.font = '16px Montserrat';
+  context.font = '16px sans-serif'; // Use default sans-serif font
 
   // Draw text on the canvas
   context.fillText(`Name: ${name}`, 10, 30);
@@ -59,9 +53,6 @@ const generateTextImage = async (name, phone, price, eventCount) => {
 // Main function to update ticket image
 export const updateTicketImage = async (participantId, name, phone, price, eventCount) => {
   try {
-    // Load Montserrat font for Canvas
-    await loadMontserratFont();
-
     // Path to the base ticket image
     const baseTicketPath = path.join(__dirname, `../images/tickets/${eventCount}.png`);
     console.log('Base ticket path:', baseTicketPath);
@@ -81,7 +72,7 @@ export const updateTicketImage = async (participantId, name, phone, price, event
     // Load the base ticket image using Sharp
     const baseTicketImage = sharp(baseTicketPath);
 
-    // Generate text image with Canvas as overlay
+    // Generate text image as overlay
     const textImageBuffer = await generateTextImage(name, phone, price, eventCount);
 
     // Composite the text and QR code onto the base ticket image
