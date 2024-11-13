@@ -33,7 +33,7 @@ const generateQRCodeImage = async (qrCodeBase64) => {
 // Helper function to generate text overlay image with Montserrat font
 const generateTextImage = async (name, phone, price, eventCount, montserratFontBase64) => {
   const svgText = `
-    <svg width="300" height="875">
+    <svg width="300" height="825">
       <defs>
         <style type="text/css">
           @font-face {
@@ -49,7 +49,7 @@ const generateTextImage = async (name, phone, price, eventCount, montserratFontB
       <text x="10" y="120" class="title">Price: ${price}</text>
     </svg>`;
   const svgBuffer = Buffer.from(svgText);
-  return sharp(svgBuffer).resize(300, 875).png();
+  return sharp(svgBuffer).resize(300, 825).png();
 };
 
 // Main function to update ticket image
