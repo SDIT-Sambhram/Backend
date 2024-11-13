@@ -1,6 +1,6 @@
 import path from 'path';
 import fs from 'fs';
-import sharp from 'sharp';
+import Jimp from 'jimp';
 import { fileURLToPath } from 'url';
 import { generateQRCode } from '../helpers/qrCodeGenerator.js';
 
@@ -30,56 +30,25 @@ export const updateTicketImage = async (participantId, name, phone, price, event
     console.log('Base ticket image exists.');
 
     // Load the base ticket image
-    const baseTicketBuffer = await fs.promises.readFile(baseTicketPath);
+    const baseTicketImage = await Jimp.read(baseTicketPath);
 
-    // Create the updated image with participant details and QR code
-    const updatedImageBuffer = await sharp(baseTicketBuffer)
-      .composite([
-        {
-          input: Buffer.from(`
-            <svg width="300" height="825">
-              <style>
-                .text { 
-                  font-family: 'Montserrat';
-                  fill: #E4E3E3;
-                  text-anchor: start;
-                  dominant-baseline: middle;
-                }
-              </style>
-              <text x="15" y="460" class="text" font-size="18">Name: ${name}</text>
-              <text x="15" y="500" class="text" font-size="18">Phone: ${phone}</text>
-            </svg>
-          `, 'utf-8'),
-          gravity: 'northwest',
-        },
-        {
-          input: Buffer.from(`
-            <svg width="300" height="825">
-              <style>
-                .event-count {
-                  font-size: 18px;
-                  fill: #E4E3E3;
-                  font-family: 'Montserrat';
-                }
-                .price {
-                  font-size: 20px;
-                  fill: #E4E3E3;
-                  font-family: 'Montserrat';
-                }
-              </style>
-              <text x="65" y="540" class="event-count">${eventCount}</text>
-              <text x="150" y="540" class="price">${price}</text>
-            </svg>
-          `, 'utf-8'),
-          gravity: 'northwest',
-        },
-        {
-          input: qrCodeBuffer,
-          top: 660,
-          left: 75,
-        },
-      ])
-      .toBuffer();
+    // Load the QR code image
+    const qrCodeImage = await Jimp.read(qrCodeBuffer);
+
+    // Load a font
+    const font = await Jimp.loadFont(Jimp.FONT_SANS_16_WHITE);
+
+    // Add participant details to the image
+    baseTicketImage.print(font, 15, 460, `Name: ${name}`);
+    baseTicketImage.print(font, 15, 500, `Phone: ${phone}`);
+    baseTicketImage.print(font, 65, 540, `${eventCount}`);
+    baseTicketImage.print(font, 150, 540, `${price}`);
+
+    // Composite the QR code onto the base image
+    baseTicketImage.composite(qrCodeImage, 75, 660);
+
+    // Get the updated image buffer
+    const updatedImageBuffer = await baseTicketImage.getBufferAsync(Jimp.MIME_PNG);
 
     console.log('Ticket image generated successfully in memory.', name, phone, price, eventCount);
     return updatedImageBuffer;
