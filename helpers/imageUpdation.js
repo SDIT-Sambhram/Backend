@@ -2,11 +2,15 @@ import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { generateQRCode } from '../helpers/qrCodeGenerator.js';
-import * as Jimp from 'jimp'; // Use named import for Jimp
+import { createRequire } from 'module';
 
 // Define __dirname for ES modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+// Create a require function for CommonJS modules
+const require = createRequire(import.meta.url);
+const Jimp = require('jimp');
 
 // Function to update ticket image with participant details
 export const updateTicketImage = async (participantId, name, phone, price, eventCount) => {
