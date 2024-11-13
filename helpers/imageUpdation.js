@@ -1,6 +1,6 @@
 import path from 'path';
 import fs from 'fs';
-import Jimp from 'jimp';
+import {Jimp} from 'jimp';
 import { fileURLToPath } from 'url';
 import { generateQRCode } from '../helpers/qrCodeGenerator.js';
 
