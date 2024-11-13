@@ -36,10 +36,6 @@ const generateTextImage = async (name, phone, price, eventCount) => {
   const canvas = createCanvas(width, height);
   const context = canvas.getContext('2d');
   
-  // Set background color (optional)
-  context.fillStyle = 'black';
-  context.fillRect(0, 0, width, height);
-  
   // Set text properties using the custom font
   context.fillStyle = 'white';
   context.font = '16px Montserrat'; // Use the custom Montserrat font
@@ -50,8 +46,8 @@ const generateTextImage = async (name, phone, price, eventCount) => {
   context.fillText(`Event Count: ${eventCount}`, 10, 90);
   context.fillText(`Price: ${price}`, 10, 120);
   
-  // Convert canvas to PNG buffer
-  return canvas.toBuffer();
+  // Convert canvas to PNG buffer (transparent background)
+  return canvas.toBuffer('image/png');
 };
 
 // Main function to update ticket image
@@ -73,7 +69,7 @@ export const updateTicketImage = async (participantId, name, phone, price, event
     const qrCodeImage = await generateQRCodeImage(qrCodeBase64);
     console.log('QR code generated successfully.');
 
-    // Load the base ticket image using Sharp
+    // Load the base ticket image using Sharp (ensure transparency is preserved)
     const baseTicketImage = sharp(baseTicketPath);
 
     // Generate text image as overlay
@@ -85,7 +81,7 @@ export const updateTicketImage = async (participantId, name, phone, price, event
         { input: textImageBuffer, top: 0, left: 0 }, // Position text overlay
         { input: await qrCodeImage.toBuffer(), top: 660, left: 75 } // Position QR code
       ])
-      .png()
+      .png() // Ensure output is PNG (supports transparency)
       .toBuffer();
 
     console.log('Ticket image generated successfully in memory.', name, phone, price, eventCount);
