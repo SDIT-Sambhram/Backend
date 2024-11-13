@@ -8,47 +8,60 @@ import { createCanvas, registerFont } from 'canvas';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Helper function to check if a file exists
-const fileExists = async (filePath) => {
-  try {
-    await fs.promises.access(filePath, fs.constants.F_OK);
-    return true;
-  } catch {
-    return false;
-  }
-};
+// Helper function to wrap text within a specified width
+const wrapText = (context, text, x, y, maxWidth, lineHeight) => {
+  const words = text.split(' ');
+  let line = '';
+  let lineY = y;
 
-// Helper function to generate QR code image
-const generateQRCodeImage = async (qrCodeBase64) => {
-  const qrCodeBuffer = Buffer.from(qrCodeBase64, 'base64');
-  return sharp(qrCodeBuffer).resize(180, 180); // Resize the QR code for a better fit
+  for (let n = 0; n < words.length; n++) {
+    const testLine = line + words[n] + ' ';
+    const metrics = context.measureText(testLine);
+    const testWidth = metrics.width;
+
+    if (testWidth > maxWidth && n > 0) {
+      context.fillText(line, x, lineY);
+      line = words[n] + ' ';
+      lineY += lineHeight;
+    } else {
+      line = testLine;
+    }
+  }
+  context.fillText(line, x, lineY);
 };
 
 // Helper function to generate text overlay image using custom font
 const generateTextImage = async (name, phone, price, eventCount) => {
   const width = 300;
   const height = 825;
-  
+
   // Register the custom font (from Lambda's file system)
   const fontPath = path.join(__dirname, 'assets', 'fonts', 'Montserrat-Regular.ttf');
   registerFont(fontPath, { family: 'Montserrat' });
-  
+
   const canvas = createCanvas(width, height);
   const context = canvas.getContext('2d');
-  
+
   // Set text properties using the custom font
   context.fillStyle = 'white';
   context.font = '17px Montserrat'; // Use the custom Montserrat font
 
-  // Draw text on the canvas
-  context.fillText(`Name: ${name}`, 16, 435);
+  // Define text wrapping properties for the name field
+  const maxWidth = 280; // Maximum width for each line of text
+  const lineHeight = 25; // Line height for wrapping
+
+  // Draw wrapped name text
+  wrapText(context, `Name: ${name}`, 16, 435, maxWidth, lineHeight);
+
+  // Draw phone, event count, and price (no wrapping needed)
   context.fillText(`Phone: ${phone}`, 16, 470);
   context.fillText(`${eventCount}`, 61, 535);
   context.fillText(`${price}`, 170, 535);
-  
+
   // Convert canvas to PNG buffer (transparent background)
   return canvas.toBuffer('image/png');
 };
+
 
 // Main function to update ticket image
 export const updateTicketImage = async (participantId, name, phone, price, eventCount) => {
