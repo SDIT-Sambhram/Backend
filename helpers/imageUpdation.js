@@ -3,7 +3,7 @@ import fs from 'fs';
 import { fileURLToPath } from 'url';
 import sharp from 'sharp';
 import { createCanvas, registerFont } from 'canvas';
-import { generateQRCode } from './generateQRCode.js';
+import { generateQRCode } from './qrCodeGenerator.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

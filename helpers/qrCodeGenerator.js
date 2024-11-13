@@ -1,4 +1,3 @@
-import e from "express";
 import QRCode from "qrcode";
 
 export const generateQRCode = async (participantId, eventCount) => {
