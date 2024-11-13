@@ -43,7 +43,7 @@ const generateTextImage = async (name, phone, price, eventCount) => {
   // Draw text on the canvas
   context.fillText(`Name: ${name}`, 16, 435);
   context.fillText(`Phone: ${phone}`, 16, 470);
-  context.fillText(`${eventCount}`, 60, 535);
+  context.fillText(`${eventCount}`, 61, 535);
   context.fillText(`${price}`, 170, 535);
   
   // Convert canvas to PNG buffer (transparent background)
@@ -79,7 +79,7 @@ export const updateTicketImage = async (participantId, name, phone, price, event
     const updatedImageBuffer = await baseTicketImage
       .composite([
         { input: textImageBuffer, top: 0, left: 0 }, // Position text overlay
-        { input: await qrCodeImage.toBuffer(), top: 660, left: 75 } // Position QR code
+        { input: await qrCodeImage.toBuffer(), top: 640, left: 65 } // Position QR code
       ])
       .png() // Ensure output is PNG (supports transparency)
       .toBuffer();
