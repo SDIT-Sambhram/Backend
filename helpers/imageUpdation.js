@@ -8,6 +8,16 @@ import { createCanvas, registerFont } from 'canvas';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// Helper function to check if a file exists
+const fileExists = async (path) => {
+  try {
+    await fs.promises.access(path, fs.constants.F_OK);
+    return true;
+  } catch {
+    return false;
+  }
+};
+
 // Helper function to wrap text within a specified width
 const wrapText = (context, text, x, y, maxWidth, lineHeight) => {
   const words = text.split(' ');
@@ -61,7 +71,6 @@ const generateTextImage = async (name, phone, price, eventCount) => {
   // Convert canvas to PNG buffer (transparent background)
   return canvas.toBuffer('image/png');
 };
-
 
 // Main function to update ticket image
 export const updateTicketImage = async (participantId, name, phone, price, eventCount) => {
