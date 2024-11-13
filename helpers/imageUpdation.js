@@ -3,6 +3,7 @@ import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { generateQRCode } from '../helpers/qrCodeGenerator.js';
 import sharp from 'sharp';
+import textToImage from 'text-to-image';
 
 // Define __dirname for ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -24,27 +25,22 @@ const generateQRCodeImage = async (qrCodeBase64) => {
   return sharp(qrCodeBuffer).resize(100, 100); // Resize QR code if needed
 };
 
-// Helper function to generate text image using sharp (without SVG)
-const generateTextImage = (name, phone, price, eventCount) => {
-  const width = 300;
-  const height = 825;
-  const fontSize = 16;
-  const lineSpacing = 40; // Space between lines
-
-  return sharp({
-    create: {
-      width,
-      height,
-      channels: 4,
-      background: { r: 0, g: 0, b: 0, alpha: 0 } // Transparent background
-    }
-  })
-    .text(`Name: ${name}`, { left: 15, top: 460, font: 'Arial', size: fontSize, fill: 'white' })
-    .text(`Phone: ${phone}`, { left: 15, top: 500, font: 'Arial', size: fontSize, fill: 'white' })
-    .text(`Event Count: ${eventCount}`, { left: 15, top: 530, font: 'Arial', size: fontSize, fill: 'white' })
-    .text(`Price: ${price}`, { left: 15, top: 560, font: 'Arial', size: fontSize, fill: 'white' })
-    .png()
-    .toBuffer();
+// Helper function to generate text image using text-to-image
+const generateTextImage = async (name, phone, price, eventCount) => {
+  const text = `
+    Name: ${name}
+    Phone: ${phone}
+    Event Count: ${eventCount}
+    Price: ${price}
+  `;
+  const options = {
+    fontSize: 18,
+    fontFamily: 'Arial',
+    textColor: '#FFFFFF',
+    bgColor: '#00000000', // Transparent background
+    verticalSpacing: 5
+  };
+  return await textToImage.generate(text, options);
 };
 
 // Main function to update ticket image
@@ -69,7 +65,7 @@ export const updateTicketImage = async (participantId, name, phone, price, event
     // Load the base ticket image using sharp
     const baseTicketImage = sharp(baseTicketPath);
 
-    // Generate text image using sharp (no need for canvas or SVG)
+    // Generate text image using text-to-image
     const textImageBuffer = await generateTextImage(name, phone, price, eventCount);
 
     // Composite the text and QR code onto the base ticket image
