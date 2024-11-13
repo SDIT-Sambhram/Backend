@@ -1,6 +1,5 @@
 import path from 'path';
 import fs from 'fs';
-import {Jimp} from 'jimp';
 import { fileURLToPath } from 'url';
 import { generateQRCode } from '../helpers/qrCodeGenerator.js';
 
@@ -11,6 +10,9 @@ const __dirname = path.dirname(__filename);
 // Function to update ticket image with participant details
 export const updateTicketImage = async (participantId, name, phone, price, eventCount) => {
   try {
+    // Dynamically import Jimp
+    const Jimp = (await import('jimp')).default;
+
     // Path to the base ticket image
     const baseTicketPath = path.join(__dirname, `../images/tickets/${eventCount}.png`);
     console.log('Base ticket path:', baseTicketPath);
