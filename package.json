@@ -5,10 +5,7 @@
   "type": "module",
   "scripts": {
     "start": "node.js",
-    "server": "nodemon app.js",
-    "frontend": "npm start --prefix ./frontend",
-    "dev": "concurrently \"npm run server\" \"npm run frontend\"",
-    "test": "jest"
+    "server": "nodemon app.js"
   },
   "author": "",
   "license": "ISC",
@@ -16,7 +13,6 @@
   "dependencies": {
     "@aws-sdk/client-s3": "^3.687.0",
     "canvas": "^2.11.2",
-    "concurrently": "^9.0.1",
     "dotenv": "^16.4.5",
     "express": "^4.21.1",
     "express-rate-limit": "^7.4.1",
