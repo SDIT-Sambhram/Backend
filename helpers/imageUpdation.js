@@ -71,3 +71,5 @@ export const updateTicketImage = async (participantId, name, phone, price, event
     throw new Error('Failed to update ticket image');
   }
 };
+
+
