@@ -1,1 +1,2 @@
-fonts/montserrat-base64.txt binary
+# Ensure montserrat-base64.txt uses LF (line feed) only and avoids conversion
+fonts/montserrat-base64.txt text eol=lf
