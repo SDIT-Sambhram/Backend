@@ -35,24 +35,26 @@ const wrapText = (context, text, x, y, maxWidth, lineHeight) => {
 const generateTextImage = async (name, phone, price, eventCount) => {
   const width = 300;
   const height = 825;
-  const fontPath = path.join(__dirname, 'assets', 'fonts', 'Montserrat-Regular.ttf');
-  registerFont(fontPath, { family: 'Montserrat' });
+  const fontPath1 = path.join(__dirname, 'assets', 'fonts', 'Montserrat-Regular.ttf');
+  registerFont(fontPath1, { family: 'Montserrat' });
+
+  const fontPath2 = path.join(__dirname, 'assets', 'fonts', 'Montserrat-bold.ttf');
+  registerFont(fontPath2, { family: 'Montserrat-Bold' });
 
   const canvas = createCanvas(width, height);
   const context = canvas.getContext('2d');
   context.fillStyle = 'white';
-  context.font = '17px Montserrat';
 
   const maxWidth = 280;
   const lineHeight = 20;
 
   // Draw the name and get the new Y position for the next line
 
-  context.font = 'bolder 18px Montserrat';
+  context.font = 'bolder 18px Montserrat-Bold';
   const newY = wrapText(context, `Name: ${name}`, 16, 415, maxWidth, lineHeight);
 
   // Draw the phone number below the wrapped name text
-  context.font = 'bolder 18px Montserrat';
+  context.font = 'bolder 18px Montserrat-Bold';
   context.fillText(`Phone: ${phone}`, 16, newY + 10);
 
   // Draw event count and price at fixed positions
