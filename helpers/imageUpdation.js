@@ -79,7 +79,7 @@ export const updateTicketImage = async (participantId, name, phone, price, event
     const updatedImageBuffer = await baseTicketImage
       .composite([
         { input: textImageBuffer, top: 0, left: 0 }, // Position text overlay
-        { input: await qrCodeImage.toBuffer(), top: 640, left: 65 } // Position QR code
+        { input: await qrCodeImage.toBuffer(), top: 630, left: 60 } // Position QR code
       ])
       .png() // Ensure output is PNG (supports transparency)
       .toBuffer();
