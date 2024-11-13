@@ -33,8 +33,8 @@ const wrapText = (context, text, x, y, maxWidth, lineHeight) => {
 
 // Function to create a text image overlay
 const generateTextImage = async (name, phone, price, eventCount) => {
-  const width = 600;  // Use larger canvas size
-  const height = 1650;  // Use larger canvas size
+  const width = 1875;  // Use larger canvas size
+  const height = 5172;  // Use larger canvas size
   
   const fontPath1 = path.join(__dirname, 'assets', 'fonts', 'Montserrat-Regular.ttf');
   registerFont(fontPath1, { family: 'Montserrat' });
