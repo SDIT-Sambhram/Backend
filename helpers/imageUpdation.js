@@ -21,7 +21,7 @@ const fileExists = async (filePath) => {
 // Helper function to generate QR code image
 const generateQRCodeImage = async (qrCodeBase64) => {
   const qrCodeBuffer = Buffer.from(qrCodeBase64, 'base64');
-  return sharp(qrCodeBuffer).resize(250, 250); // Resize the QR code for a better fit
+  return sharp(qrCodeBuffer).resize(180, 180); // Resize the QR code for a better fit
 };
 
 // Helper function to generate text overlay image using custom font
@@ -38,13 +38,13 @@ const generateTextImage = async (name, phone, price, eventCount) => {
   
   // Set text properties using the custom font
   context.fillStyle = 'white';
-  context.font = '18px Montserrat'; // Use the custom Montserrat font
+  context.font = '17px Montserrat'; // Use the custom Montserrat font
 
   // Draw text on the canvas
-  context.fillText(`Name: ${name}`, 15, 4300);
+  context.fillText(`Name: ${name}`, 15, 430);
   context.fillText(`Phone: ${phone}`, 15, 460);
-  context.fillText(`${eventCount}`, 56, 500);
-  context.fillText(`${price}`, 150, 500);
+  context.fillText(`${eventCount}`, 60, 530);
+  context.fillText(`${price}`, 157, 530);
   
   // Convert canvas to PNG buffer (transparent background)
   return canvas.toBuffer('image/png');
