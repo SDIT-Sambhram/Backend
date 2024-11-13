@@ -44,7 +44,7 @@ const generateTextImage = async (name, phone, price, eventCount) => {
   context.font = '17px Montserrat';
 
   const maxWidth = 280;
-  const lineHeight = 18;
+  const lineHeight = 20;
 
   // Draw the name and get the new Y position for the next line
   const newY = wrapText(context, `Name: ${name}`, 16, 415, maxWidth, lineHeight);
