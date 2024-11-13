@@ -19,9 +19,9 @@ const fileExists = async (filePath) => {
 
 // Helper function to load Montserrat font base64 from a file
 const loadMontserratFont = async () => {
-  const fontPath = path.join(__dirname, '../fonts/montserrat-base64.txt'); // Fixed path syntax
-  const fontBase64 = await fs.promises.readFile(fontPath, 'utf8');
-  return `data:font/ttf;base64,${fontBase64}`;
+  const fontPath = path.join(__dirname, '../fonts/Montserrat-Regular.ttf');
+  const fontData = await fs.promises.readFile(fontPath);
+  return `data:font/ttf;base64,${fontData.toString('base64')}`;
 };
 
 // Helper function to generate QR code image
@@ -33,7 +33,7 @@ const generateQRCodeImage = async (qrCodeBase64) => {
 // Helper function to generate text overlay image with Montserrat font
 const generateTextImage = async (name, phone, price, eventCount, montserratFontBase64) => {
   const svgText = `
-    <svg width="300" height="825">
+    <svg width="300" height="825" xmlns="http://www.w3.org/2000/svg">
       <defs>
         <style type="text/css">
           @font-face {
