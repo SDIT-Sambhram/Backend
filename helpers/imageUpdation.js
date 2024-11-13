@@ -25,9 +25,9 @@ const generateQRCodeImage = async (qrCodeBase64) => {
 };
 
 // Helper function to generate text overlay image using sharp
-const generateTextImage = (name, phone, price, eventCount) => {
+const generateTextImage = async (name, phone, price, eventCount) => {
   const canvasWidth = 300;
-  const canvasHeight = 200; // Adjust as needed
+  const canvasHeight = 875; // Adjust as needed
   const text = `
     Name: ${name}
     Phone: ${phone}
@@ -35,20 +35,19 @@ const generateTextImage = (name, phone, price, eventCount) => {
     Price: ${price}
   `;
 
-  // Render text to an image using sharp
-  const buffer = Buffer.from(`
-    <svg width="${canvasWidth}" height="${canvasHeight}">
-      <style>
-        .text { font-size: 18px; font-family: Arial, sans-serif; fill: white; }
-      </style>
-      <text x="10" y="30" class="text">Name: ${name}</text>
-      <text x="10" y="60" class="text">Phone: ${phone}</text>
-      <text x="10" y="90" class="text">Event Count: ${eventCount}</text>
-      <text x="10" y="120" class="text">Price: ${price}</text>
-    </svg>
-  `);
+  const image = sharp({
+    create: {
+      width: canvasWidth,
+      height: canvasHeight,
+      channels: 4,
+      background: { r: 0, g: 0, b: 0, alpha: 0 }, // Transparent background
+    },
+  });
 
-  return sharp(buffer).toBuffer();
+  // Apply the text overlay on top of the base canvas
+  return image
+    .text({ text, font: 'Arial', fontSize: 18, left: 10, top: 10, fill: 'white' }) // Adjust position, size, and color
+    .toBuffer();
 };
 
 // Main function to update ticket image
