@@ -19,7 +19,7 @@ const fileExists = async (filePath) => {
 
 // Helper function to load Montserrat font base64 from a file
 const loadMontserratFont = async () => {
-  const fontPath = path.join(__dirname, '..\fonts\montserrat-base64.txt'); // Path to the font file
+  const fontPath = path.join(__dirname, '../fonts/montserrat-base64.txt'); // Fixed path syntax
   const fontBase64 = await fs.promises.readFile(fontPath, 'utf8');
   return `data:font/ttf;base64,${fontBase64}`;
 };
