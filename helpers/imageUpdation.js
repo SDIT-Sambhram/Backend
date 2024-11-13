@@ -47,12 +47,16 @@ const generateTextImage = async (name, phone, price, eventCount) => {
   const lineHeight = 20;
 
   // Draw the name and get the new Y position for the next line
+
+  context.font = 'bold 18px Montserrat';
   const newY = wrapText(context, `Name: ${name}`, 16, 415, maxWidth, lineHeight);
 
   // Draw the phone number below the wrapped name text
+  context.font = 'bold 18px Montserrat';
   context.fillText(`Phone: ${phone}`, 16, newY + 10);
 
   // Draw event count and price at fixed positions
+  context.font = '16px Montserrat';
   context.fillText(`${eventCount}`, 61, 535);
   context.fillText(`${price}`, 170, 535);
 
