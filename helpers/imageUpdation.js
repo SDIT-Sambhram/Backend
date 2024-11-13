@@ -3,7 +3,6 @@ import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { generateQRCode } from '../helpers/qrCodeGenerator.js';
 import sharp from 'sharp';
-import textToImage from 'text-to-image';
 
 // Define __dirname for ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -25,22 +24,31 @@ const generateQRCodeImage = async (qrCodeBase64) => {
   return sharp(qrCodeBuffer).resize(100, 100); // Resize QR code if needed
 };
 
-// Helper function to generate text image using text-to-image
-const generateTextImage = async (name, phone, price, eventCount) => {
+// Helper function to generate text overlay image using sharp
+const generateTextImage = (name, phone, price, eventCount) => {
+  const canvasWidth = 300;
+  const canvasHeight = 200; // Adjust as needed
   const text = `
     Name: ${name}
     Phone: ${phone}
     Event Count: ${eventCount}
     Price: ${price}
   `;
-  const options = {
-    fontSize: 18,
-    fontFamily: 'Arial',
-    textColor: '#FFFFFF',
-    bgColor: '#00000000', // Transparent background
-    verticalSpacing: 5
-  };
-  return await textToImage.generate(text, options);
+
+  // Render text to an image using sharp
+  const buffer = Buffer.from(`
+    <svg width="${canvasWidth}" height="${canvasHeight}">
+      <style>
+        .text { font-size: 18px; font-family: Arial, sans-serif; fill: white; }
+      </style>
+      <text x="10" y="30" class="text">Name: ${name}</text>
+      <text x="10" y="60" class="text">Phone: ${phone}</text>
+      <text x="10" y="90" class="text">Event Count: ${eventCount}</text>
+      <text x="10" y="120" class="text">Price: ${price}</text>
+    </svg>
+  `);
+
+  return sharp(buffer).toBuffer();
 };
 
 // Main function to update ticket image
@@ -65,7 +73,7 @@ export const updateTicketImage = async (participantId, name, phone, price, event
     // Load the base ticket image using sharp
     const baseTicketImage = sharp(baseTicketPath);
 
-    // Generate text image using text-to-image
+    // Generate text image using sharp
     const textImageBuffer = await generateTextImage(name, phone, price, eventCount);
 
     // Composite the text and QR code onto the base ticket image
