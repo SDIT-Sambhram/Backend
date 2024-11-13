@@ -2,6 +2,7 @@ import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { generateQRCode } from '../helpers/qrCodeGenerator.js';
+import sharp from 'sharp';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -16,37 +17,46 @@ const fileExists = async (filePath) => {
   }
 };
 
-// Helper function to generate QR code image
-const generateQRCodeImage = async (qrCodeBase64) => {
-  const Jimp = await import('jimp'); // Import Jimp
-  const qrCodeBuffer = Buffer.from(qrCodeBase64, 'base64');
-  return await Jimp.read(qrCodeBuffer); // Returns a Jimp image object
+// Helper function to load Montserrat font base64 from a file
+const loadMontserratFont = async () => {
+  const fontPath = path.join(__dirname, '..\fonts\montserrat-base64.txt'); // Path to the font file
+  const fontBase64 = await fs.promises.readFile(fontPath, 'utf8');
+  return `data:font/ttf;base64,${fontBase64}`;
 };
 
-// Helper function to generate text overlay image using Jimp
-const generateTextImage = async (name, phone, price, eventCount) => {
-  const Jimp = await import('jimp'); // Import Jimp
-  const font = await Jimp.loadFont(Jimp.FONT_SANS_16_WHITE); // Load a white font (16px size)
+// Helper function to generate QR code image
+const generateQRCodeImage = async (qrCodeBase64) => {
+  const qrCodeBuffer = Buffer.from(qrCodeBase64, 'base64');
+  return sharp(qrCodeBuffer);
+};
 
-  const canvasWidth = 300;
-  const canvasHeight = 875;
-
-  // Create a blank image with transparent background
-  const image = new Jimp(canvasWidth, canvasHeight, 0x00000000); // Transparent background
-
-  // Overlay text
-  image.print(font, 10, 10, `Name: ${name}`);
-  image.print(font, 10, 40, `Phone: ${phone}`);
-  image.print(font, 10, 70, `Event Count: ${eventCount}`);
-  image.print(font, 10, 100, `Price: ${price}`);
-
-  return image;
+// Helper function to generate text overlay image with Montserrat font
+const generateTextImage = async (name, phone, price, eventCount, montserratFontBase64) => {
+  const svgText = `
+    <svg width="300" height="875">
+      <defs>
+        <style type="text/css">
+          @font-face {
+            font-family: 'Montserrat';
+            src: url('${montserratFontBase64}') format('truetype');
+          }
+          .title { fill: white; font-size: 16px; font-family: 'Montserrat'; }
+        </style>
+      </defs>
+      <text x="10" y="30" class="title">Name: ${name}</text>
+      <text x="10" y="60" class="title">Phone: ${phone}</text>
+      <text x="10" y="90" class="title">Event Count: ${eventCount}</text>
+      <text x="10" y="120" class="title">Price: ${price}</text>
+    </svg>`;
+  const svgBuffer = Buffer.from(svgText);
+  return sharp(svgBuffer).resize(300, 875).png();
 };
 
 // Main function to update ticket image
 export const updateTicketImage = async (participantId, name, phone, price, eventCount) => {
   try {
-    const Jimp = await import('jimp'); // Import Jimp
+    // Load Montserrat font base64 from the file
+    const montserratFontBase64 = await loadMontserratFont();
 
     // Path to the base ticket image
     const baseTicketPath = path.join(__dirname, `../images/tickets/${eventCount}.png`);
@@ -64,18 +74,20 @@ export const updateTicketImage = async (participantId, name, phone, price, event
     const qrCodeImage = await generateQRCodeImage(qrCodeBase64);
     console.log('QR code generated successfully.');
 
-    // Load the base ticket image using Jimp
-    const baseTicketImage = await Jimp.read(baseTicketPath);
+    // Load the base ticket image using Sharp
+    const baseTicketImage = sharp(baseTicketPath);
 
-    // Generate text image using Jimp
-    const textImage = await generateTextImage(name, phone, price, eventCount);
+    // Generate text image with Montserrat font as overlay
+    const textImage = await generateTextImage(name, phone, price, eventCount, montserratFontBase64);
 
     // Composite the text and QR code onto the base ticket image
-    baseTicketImage.composite(textImage, 0, 0); // Composite text onto the image (top-left corner)
-    baseTicketImage.composite(qrCodeImage, 75, 660); // Position QR code
-
-    // Write the final image to buffer (you can save it as a file if needed)
-    const updatedImageBuffer = await baseTicketImage.getBufferAsync(Jimp.MIME_PNG);
+    const updatedImageBuffer = await baseTicketImage
+      .composite([
+        { input: await textImage.toBuffer(), top: 0, left: 0 }, // Position text overlay
+        { input: await qrCodeImage.toBuffer(), top: 660, left: 75 } // Position QR code
+      ])
+      .png()
+      .toBuffer();
 
     console.log('Ticket image generated successfully in memory.', name, phone, price, eventCount);
     return updatedImageBuffer;
