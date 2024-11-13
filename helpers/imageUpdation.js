@@ -77,7 +77,7 @@ export const updateTicketImage = async (participantId, name, phone, price, event
     const updatedImageBuffer = await baseTicketImage
       .composite([
         { input: textImageBuffer, top: 0, left: 0 },
-        { input: qrCodeImage, top: 635, left: 60 }
+        { input: qrCodeImage, top: 635, left: 63 }
       ])
       .png()
       .toBuffer();
