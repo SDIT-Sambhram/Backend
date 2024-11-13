@@ -35,15 +35,15 @@ export const updateTicketImage = async (participantId, name, phone, price, event
     // Generate the text overlay image
     const textImage = await sharp({
       create: {
-        width: 500, // Set width of the text area (adjust based on your ticket size)
-        height: 700, // Set height of the text area (adjust based on your ticket size)
+        width: 300, // Set width of the text area (adjust based on your ticket size)
+        height: 825, // Set height of the text area (adjust based on your ticket size)
         channels: 4,
         background: { r: 0, g: 0, b: 0, alpha: 0 } // Transparent background
       }
     })
       .composite([{
         input: Buffer.from(`
-          <svg width="500" height="700">
+          <svg width="300" height="825">
             <text x="15" y="460" font-family="Sans" font-size="16" fill="white">Name: ${name}</text>
             <text x="15" y="500" font-family="Sans" font-size="16" fill="white">Phone: ${phone}</text>
             <text x="65" y="540" font-family="Sans" font-size="16" fill="white">${eventCount}</text>
