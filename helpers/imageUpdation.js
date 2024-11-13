@@ -80,13 +80,21 @@ export const updateTicketImage = async (participantId, name, phone, price, event
     const baseTicketImage = sharp(baseTicketPath);
     const textImageBuffer = await generateTextImage(name, phone, price, eventCount);
 
-    // Resize the generated text and QR code images to fit the base image size (300x825)
+    // Resize both the text and QR code images to match the base image size
+    const resizedTextImageBuffer = await sharp(textImageBuffer)
+      .resize(300, 825)  // Resize to the base image dimensions
+      .toBuffer();
+
+    const resizedQRCodeImage = await sharp(qrCodeImage)
+      .resize(150, 150)  // Resize QR code to fit in the image
+      .toBuffer();
+
+    // Now composite the resized images onto the base ticket image
     const updatedImageBuffer = await baseTicketImage
       .composite([
-        { input: textImageBuffer, top: 0, left: 0 },
-        { input: qrCodeImage, top: 1270, left: 125 }  // Adjust QR code position
+        { input: resizedTextImageBuffer, top: 0, left: 0 },
+        { input: resizedQRCodeImage, top: 635, left: 63 }  // Adjust QR code position as needed
       ])
-      .resize(300, 825)  // Resize back to original size
       .png()
       .toBuffer();
 
