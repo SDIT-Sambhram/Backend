@@ -2,7 +2,7 @@ import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { generateQRCode } from '../helpers/qrCodeGenerator.js';
-import sharp from 'sharp';
+const Jimp = await import('jimp'); // Import Jimp asynchronously
 
 // Define __dirname for ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -21,33 +21,26 @@ const fileExists = async (filePath) => {
 // Helper function to generate QR code image
 const generateQRCodeImage = async (qrCodeBase64) => {
   const qrCodeBuffer = Buffer.from(qrCodeBase64, 'base64');
-  return sharp(qrCodeBuffer).resize(100, 100); // Resize QR code if needed
+  return Jimp.read(qrCodeBuffer); // Returns a Jimp image object
 };
 
-// Helper function to generate text overlay image using sharp
+// Helper function to generate text overlay image using Jimp
 const generateTextImage = async (name, phone, price, eventCount) => {
+  const font = await Jimp.loadFont(Jimp.FONT_SANS_16_WHITE); // Load a white font (16px size)
+  
   const canvasWidth = 300;
-  const canvasHeight = 875; // Adjust as needed
-  const text = `
-    Name: ${name}
-    Phone: ${phone}
-    Event Count: ${eventCount}
-    Price: ${price}
-  `;
+  const canvasHeight = 875;
 
-  const image = sharp({
-    create: {
-      width: canvasWidth,
-      height: canvasHeight,
-      channels: 4,
-      background: { r: 0, g: 0, b: 0, alpha: 0 }, // Transparent background
-    },
-  });
+  // Create a blank image with transparent background
+  const image = new Jimp(canvasWidth, canvasHeight, 0x00000000); // Transparent background
 
-  // Apply the text overlay on top of the base canvas
-  return image
-    .text({ text, font: 'Arial', fontSize: 18, left: 10, top: 10, fill: 'white' }) // Adjust position, size, and color
-    .toBuffer();
+  // Overlay text
+  image.print(font, 10, 10, `Name: ${name}`);
+  image.print(font, 10, 40, `Phone: ${phone}`);
+  image.print(font, 10, 70, `Event Count: ${eventCount}`);
+  image.print(font, 10, 100, `Price: ${price}`);
+
+  return image;
 };
 
 // Main function to update ticket image
@@ -69,20 +62,18 @@ export const updateTicketImage = async (participantId, name, phone, price, event
     const qrCodeImage = await generateQRCodeImage(qrCodeBase64);
     console.log('QR code generated successfully.');
 
-    // Load the base ticket image using sharp
-    const baseTicketImage = sharp(baseTicketPath);
+    // Load the base ticket image using Jimp
+    const baseTicketImage = await Jimp.read(baseTicketPath);
 
-    // Generate text image using sharp
-    const textImageBuffer = await generateTextImage(name, phone, price, eventCount);
+    // Generate text image using Jimp
+    const textImage = await generateTextImage(name, phone, price, eventCount);
 
     // Composite the text and QR code onto the base ticket image
-    const updatedImageBuffer = await baseTicketImage
-      .composite([
-        { input: textImageBuffer, top: 0, left: 0 }, // Position text overlay
-        { input: await qrCodeImage.toBuffer(), top: 660, left: 75 } // Position QR code
-      ])
-      .png()
-      .toBuffer();
+    baseTicketImage.composite(textImage, 0, 0); // Composite text onto the image (top-left corner)
+    baseTicketImage.composite(qrCodeImage, 75, 660); // Position QR code
+
+    // Write the final image to buffer (you can save it as a file if needed)
+    const updatedImageBuffer = await baseTicketImage.getBufferAsync(Jimp.MIME_PNG);
 
     console.log('Ticket image generated successfully in memory.', name, phone, price, eventCount);
     return updatedImageBuffer;
@@ -92,5 +83,3 @@ export const updateTicketImage = async (participantId, name, phone, price, event
     throw new Error('Failed to update ticket image');
   }
 };
-
-
