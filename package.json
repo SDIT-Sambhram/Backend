@@ -15,7 +15,6 @@
   "description": "",
   "dependencies": {
     "@aws-sdk/client-s3": "^3.687.0",
-    "@napi-rs/canvas": "^0.1.61",
     "colors": "^1.4.0",
     "concurrently": "^9.0.1",
     "dotenv": "^16.4.5",

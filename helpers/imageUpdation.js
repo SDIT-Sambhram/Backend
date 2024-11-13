@@ -3,7 +3,6 @@ import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { generateQRCode } from '../helpers/qrCodeGenerator.js';
 import sharp from 'sharp';
-import { createCanvas, loadImage } from '@napi-rs/canvas';
 
 // Define __dirname for ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -33,30 +32,37 @@ export const updateTicketImage = async (participantId, name, phone, price, event
     // Load the base ticket image using sharp
     let baseTicketImage = sharp(baseTicketPath);
 
-    // Create a canvas for adding text (using @napi-rs/canvas)
-    const canvas = createCanvas(500, 700); // Adjust size based on your ticket image
-    const context = canvas.getContext('2d');
+    // Generate the text overlay image
+    const textImage = await sharp({
+      create: {
+        width: 500, // Set width of the text area (adjust based on your ticket size)
+        height: 700, // Set height of the text area (adjust based on your ticket size)
+        channels: 4,
+        background: { r: 0, g: 0, b: 0, alpha: 0 } // Transparent background
+      }
+    })
+      .composite([{
+        input: Buffer.from(`
+          <svg width="500" height="700">
+            <text x="15" y="460" font-family="Sans" font-size="16" fill="white">Name: ${name}</text>
+            <text x="15" y="500" font-family="Sans" font-size="16" fill="white">Phone: ${phone}</text>
+            <text x="65" y="540" font-family="Sans" font-size="16" fill="white">${eventCount}</text>
+            <text x="150" y="540" font-family="Sans" font-size="16" fill="white">${price}</text>
+          </svg>
+        `),
+        top: 0,
+        left: 0
+      }])
+      .png()
+      .toBuffer();
 
-    // Set text styling
-    context.fillStyle = '#FFFFFF'; // White color for text
-    context.font = '16px Sans';
-
-    // Add participant details to the canvas
-    context.fillText(`Name: ${name}`, 15, 460);
-    context.fillText(`Phone: ${phone}`, 15, 500);
-    context.fillText(`${eventCount}`, 65, 540);
-    context.fillText(`${price}`, 150, 540);
-
-    // Render the text as an image buffer
-    const textOverlay = canvas.toBuffer('image/png');
-
-    // Composite the QR code onto the base image
+    // Resize and composite the QR code onto the base image
     const qrCodeImage = sharp(qrCodeBuffer).resize(100, 100); // Resize QR code if needed
 
     // Composite the text and QR code onto the base ticket image
     const updatedImageBuffer = await baseTicketImage
       .composite([
-        { input: textOverlay, top: 0, left: 0 },        // Position text overlay
+        { input: textImage, top: 0, left: 0 },        // Position text overlay
         { input: await qrCodeImage.toBuffer(), top: 660, left: 75 } // Position QR code
       ])
       .png()
@@ -70,4 +76,3 @@ export const updateTicketImage = async (participantId, name, phone, price, event
     throw new Error('Failed to update ticket image');
   }
 };
-
