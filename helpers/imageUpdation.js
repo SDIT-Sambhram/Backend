@@ -3,7 +3,7 @@ import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { generateQRCode } from '../helpers/qrCodeGenerator.js';
 import sharp from 'sharp';
-import { createCanvas } from 'canvas';
+import { createCanvas, registerFont } from 'canvas';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -21,13 +21,17 @@ const fileExists = async (filePath) => {
 // Helper function to generate QR code image
 const generateQRCodeImage = async (qrCodeBase64) => {
   const qrCodeBuffer = Buffer.from(qrCodeBase64, 'base64');
-  return sharp(qrCodeBuffer);
+  return sharp(qrCodeBuffer).resize(150, 150); // Resize the QR code for a better fit
 };
 
-// Helper function to generate text overlay image without custom font
+// Helper function to generate text overlay image using custom font
 const generateTextImage = async (name, phone, price, eventCount) => {
   const width = 300;
   const height = 825;
+  
+  // Register the custom font (from Lambda's file system)
+  const fontPath = path.join(__dirname, 'assets', 'fonts', 'Montserrat-Regular.ttf');
+  registerFont(fontPath, { family: 'Montserrat' });
   
   const canvas = createCanvas(width, height);
   const context = canvas.getContext('2d');
@@ -36,9 +40,9 @@ const generateTextImage = async (name, phone, price, eventCount) => {
   context.fillStyle = 'black';
   context.fillRect(0, 0, width, height);
   
-  // Set text properties
+  // Set text properties using the custom font
   context.fillStyle = 'white';
-  context.font = '16px sans-serif'; // Use default sans-serif font
+  context.font = '16px Montserrat'; // Use the custom Montserrat font
 
   // Draw text on the canvas
   context.fillText(`Name: ${name}`, 10, 30);
