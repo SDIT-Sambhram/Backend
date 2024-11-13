@@ -8,7 +8,7 @@ import { generateQRCode } from './qrCodeGenerator.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Helper function to wrap text within a specified width
+// Modified wrapText function to return the ending Y position
 const wrapText = (context, text, x, y, maxWidth, lineHeight) => {
   const words = text.split(' ');
   let line = '';
@@ -28,6 +28,7 @@ const wrapText = (context, text, x, y, maxWidth, lineHeight) => {
     }
   }
   context.fillText(line, x, lineY);
+  return lineY + lineHeight;  // Return new Y position after the last line
 };
 
 // Function to create a text image overlay
@@ -43,15 +44,21 @@ const generateTextImage = async (name, phone, price, eventCount) => {
   context.font = '17px Montserrat';
 
   const maxWidth = 280;
-  const lineHeight = 25;
+  const lineHeight = 18;
 
-  wrapText(context, `Name: ${name}`, 16, 435, maxWidth, lineHeight);
-  context.fillText(`Phone: ${phone}`, 16, 470);
+  // Draw the name and get the new Y position for the next line
+  const newY = wrapText(context, `Name: ${name}`, 16, 415, maxWidth, lineHeight);
+
+  // Draw the phone number below the wrapped name text
+  context.fillText(`Phone: ${phone}`, 16, newY);
+
+  // Draw event count and price at fixed positions
   context.fillText(`${eventCount}`, 61, 535);
   context.fillText(`${price}`, 170, 535);
 
   return canvas.toBuffer('image/png');
 };
+
 
 // Main function to update ticket image
 export const updateTicketImage = async (participantId, name, phone, price, eventCount) => {
@@ -70,7 +77,7 @@ export const updateTicketImage = async (participantId, name, phone, price, event
     const updatedImageBuffer = await baseTicketImage
       .composite([
         { input: textImageBuffer, top: 0, left: 0 },
-        { input: qrCodeImage, top: 630, left: 60 }
+        { input: qrCodeImage, top: 635, left: 60 }
       ])
       .png()
       .toBuffer();
