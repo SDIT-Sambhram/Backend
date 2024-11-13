@@ -2,7 +2,6 @@ import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { generateQRCode } from '../helpers/qrCodeGenerator.js';
-import { Jimp } from 'jimp';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -19,12 +18,14 @@ const fileExists = async (filePath) => {
 
 // Helper function to generate QR code image
 const generateQRCodeImage = async (qrCodeBase64) => {
+  const Jimp = (await import('jimp')).default; // Dynamically import Jimp
   const qrCodeBuffer = Buffer.from(qrCodeBase64, 'base64');
   return await Jimp.read(qrCodeBuffer); // Returns a Jimp image object
 };
 
 // Helper function to generate text overlay image using Jimp
 const generateTextImage = async (name, phone, price, eventCount) => {
+  const Jimp = (await import('jimp')).default; // Dynamically import Jimp
   const font = await Jimp.loadFont(Jimp.FONT_SANS_16_WHITE); // Load a white font (16px size)
   
   const canvasWidth = 300;
@@ -45,6 +46,8 @@ const generateTextImage = async (name, phone, price, eventCount) => {
 // Main function to update ticket image
 export const updateTicketImage = async (participantId, name, phone, price, eventCount) => {
   try {
+    const Jimp = (await import('jimp')).default; // Dynamically import Jimp
+
     // Path to the base ticket image
     const baseTicketPath = path.join(__dirname, `../images/tickets/${eventCount}.png`);
     console.log('Base ticket path:', baseTicketPath);
