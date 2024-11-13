@@ -3,6 +3,7 @@ import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { generateQRCode } from '../helpers/qrCodeGenerator.js';
 import sharp from 'sharp';
+import { createCanvas, loadImage, registerFont } from 'canvas';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -17,11 +18,10 @@ const fileExists = async (filePath) => {
   }
 };
 
-// Helper function to load Montserrat font base64 from a file
+// Load and register Montserrat font for Canvas
 const loadMontserratFont = async () => {
   const fontPath = path.join(__dirname, '../fonts/Montserrat-Regular.ttf');
-  const fontData = await fs.promises.readFile(fontPath);
-  return `data:font/ttf;base64,${fontData.toString('base64')}`;
+  registerFont(fontPath, { family: 'Montserrat' });
 };
 
 // Helper function to generate QR code image
@@ -30,33 +30,37 @@ const generateQRCodeImage = async (qrCodeBase64) => {
   return sharp(qrCodeBuffer);
 };
 
-// Helper function to generate text overlay image with Montserrat font
-const generateTextImage = async (name, phone, price, eventCount, montserratFontBase64) => {
-  const svgText = `
-    <svg width="300" height="825" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <style type="text/css">
-          @font-face {
-            font-family: 'Montserrat';
-            src: url('${montserratFontBase64}') format('truetype');
-          }
-          .title { fill: white; font-size: 16px; font-family: 'Montserrat'; }
-        </style>
-      </defs>
-      <text x="10" y="30" class="title">Name: ${name}</text>
-      <text x="10" y="60" class="title">Phone: ${phone}</text>
-      <text x="10" y="90" class="title">Event Count: ${eventCount}</text>
-      <text x="10" y="120" class="title">Price: ${price}</text>
-    </svg>`;
-  const svgBuffer = Buffer.from(svgText);
-  return sharp(svgBuffer).resize(300, 825).png();
+// Helper function to generate text overlay image with Canvas
+const generateTextImage = async (name, phone, price, eventCount) => {
+  const width = 300;
+  const height = 825;
+  
+  const canvas = createCanvas(width, height);
+  const context = canvas.getContext('2d');
+  
+  // Set background color (optional)
+  context.fillStyle = 'black';
+  context.fillRect(0, 0, width, height);
+  
+  // Set text properties
+  context.fillStyle = 'white';
+  context.font = '16px Montserrat';
+
+  // Draw text on the canvas
+  context.fillText(`Name: ${name}`, 10, 30);
+  context.fillText(`Phone: ${phone}`, 10, 60);
+  context.fillText(`Event Count: ${eventCount}`, 10, 90);
+  context.fillText(`Price: ${price}`, 10, 120);
+  
+  // Convert canvas to PNG buffer
+  return canvas.toBuffer();
 };
 
 // Main function to update ticket image
 export const updateTicketImage = async (participantId, name, phone, price, eventCount) => {
   try {
-    // Load Montserrat font base64 from the file
-    const montserratFontBase64 = await loadMontserratFont();
+    // Load Montserrat font for Canvas
+    await loadMontserratFont();
 
     // Path to the base ticket image
     const baseTicketPath = path.join(__dirname, `../images/tickets/${eventCount}.png`);
@@ -77,13 +81,13 @@ export const updateTicketImage = async (participantId, name, phone, price, event
     // Load the base ticket image using Sharp
     const baseTicketImage = sharp(baseTicketPath);
 
-    // Generate text image with Montserrat font as overlay
-    const textImage = await generateTextImage(name, phone, price, eventCount, montserratFontBase64);
+    // Generate text image with Canvas as overlay
+    const textImageBuffer = await generateTextImage(name, phone, price, eventCount);
 
     // Composite the text and QR code onto the base ticket image
     const updatedImageBuffer = await baseTicketImage
       .composite([
-        { input: await textImage.toBuffer(), top: 0, left: 0 }, // Position text overlay
+        { input: textImageBuffer, top: 0, left: 0 }, // Position text overlay
         { input: await qrCodeImage.toBuffer(), top: 660, left: 75 } // Position QR code
       ])
       .png()
