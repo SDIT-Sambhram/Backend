@@ -32,7 +32,7 @@ export const updateTicketImage = async (participantId, name, phone, price, event
     // Load the base ticket image using sharp
     let baseTicketImage = sharp(baseTicketPath);
 
-    // Generate the text overlay image
+    // Create an image with text for the participant details
     const textImage = await sharp({
       create: {
         width: 300, // Set width of the text area (adjust based on your ticket size)
@@ -44,10 +44,10 @@ export const updateTicketImage = async (participantId, name, phone, price, event
       .composite([{
         input: Buffer.from(`
           <svg width="300" height="825">
-            <text x="15" y="460" font-family="Sans" font-size="16" fill="white">Name: ${name}</text>
-            <text x="15" y="500" font-family="Sans" font-size="16" fill="white">Phone: ${phone}</text>
-            <text x="65" y="540" font-family="Sans" font-size="16" fill="white">${eventCount}</text>
-            <text x="150" y="540" font-family="Sans" font-size="16" fill="white">${price}</text>
+            <text x="15" y="460" font-family="Sans" font-size="16" fill="white">${name}</text>
+            <text x="15" y="500" font-family="Sans" font-size="16" fill="white">${phone}</text>
+            <text x="15" y="530" font-family="Sans" font-size="16" fill="white">Event Count: ${eventCount}</text>
+            <text x="15" y="560" font-family="Sans" font-size="16" fill="white">Price: ${price}</text>
           </svg>
         `),
         top: 0,
