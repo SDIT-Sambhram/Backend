@@ -3,7 +3,6 @@ import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { generateQRCode } from '../helpers/qrCodeGenerator.js';
 import sharp from 'sharp';
-import { createCanvas } from 'canvas';
 
 // Define __dirname for ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -25,24 +24,27 @@ const generateQRCodeImage = async (qrCodeBase64) => {
   return sharp(qrCodeBuffer).resize(100, 100); // Resize QR code if needed
 };
 
-// Helper function to create a text overlay image using canvas
+// Helper function to generate text image using sharp (without SVG)
 const generateTextImage = (name, phone, price, eventCount) => {
-  const canvas = createCanvas(300, 825); // Adjust the canvas size to match the ticket size
-  const ctx = canvas.getContext('2d');
+  const width = 300;
+  const height = 825;
+  const fontSize = 16;
+  const lineSpacing = 40; // Space between lines
 
-  // Set font properties (ensure the font is available)
-  ctx.font = '16px Arial'; // Use a commonly available font
-  ctx.fillStyle = 'white';
-  ctx.textBaseline = 'top';
-
-  // Render the text onto the canvas
-  ctx.fillText(`Name: ${name}`, 15, 460);
-  ctx.fillText(`Phone: ${phone}`, 15, 500);
-  ctx.fillText(`Event Count: ${eventCount}`, 15, 530);
-  ctx.fillText(`Price: ${price}`, 15, 560);
-
-  // Convert the canvas to a buffer (PNG format)
-  return canvas.toBuffer('image/png');
+  return sharp({
+    create: {
+      width,
+      height,
+      channels: 4,
+      background: { r: 0, g: 0, b: 0, alpha: 0 } // Transparent background
+    }
+  })
+    .text(`Name: ${name}`, { left: 15, top: 460, font: 'Arial', size: fontSize, fill: 'white' })
+    .text(`Phone: ${phone}`, { left: 15, top: 500, font: 'Arial', size: fontSize, fill: 'white' })
+    .text(`Event Count: ${eventCount}`, { left: 15, top: 530, font: 'Arial', size: fontSize, fill: 'white' })
+    .text(`Price: ${price}`, { left: 15, top: 560, font: 'Arial', size: fontSize, fill: 'white' })
+    .png()
+    .toBuffer();
 };
 
 // Main function to update ticket image
@@ -67,14 +69,14 @@ export const updateTicketImage = async (participantId, name, phone, price, event
     // Load the base ticket image using sharp
     const baseTicketImage = sharp(baseTicketPath);
 
-    // Generate text image using canvas
-    const textImageBuffer = generateTextImage(name, phone, price, eventCount);
+    // Generate text image using sharp (no need for canvas or SVG)
+    const textImageBuffer = await generateTextImage(name, phone, price, eventCount);
 
     // Composite the text and QR code onto the base ticket image
     const updatedImageBuffer = await baseTicketImage
       .composite([
-        { input: textImageBuffer, top: 0, left: 0 },  // Position text overlay
-        { input: await qrCodeImage.toBuffer(), top: 660, left: 75 }  // Position QR code
+        { input: textImageBuffer, top: 0, left: 0 }, // Position text overlay
+        { input: await qrCodeImage.toBuffer(), top: 660, left: 75 } // Position QR code
       ])
       .png()
       .toBuffer();
