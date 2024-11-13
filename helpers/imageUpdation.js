@@ -41,10 +41,10 @@ const generateTextImage = async (name, phone, price, eventCount) => {
   context.font = '17px Montserrat'; // Use the custom Montserrat font
 
   // Draw text on the canvas
-  context.fillText(`Name: ${name}`, 15, 430);
-  context.fillText(`Phone: ${phone}`, 15, 460);
-  context.fillText(`${eventCount}`, 60, 530);
-  context.fillText(`${price}`, 157, 530);
+  context.fillText(`Name: ${name}`, 16, 435);
+  context.fillText(`Phone: ${phone}`, 16, 470);
+  context.fillText(`${eventCount}`, 60, 535);
+  context.fillText(`${price}`, 170, 535);
   
   // Convert canvas to PNG buffer (transparent background)
   return canvas.toBuffer('image/png');
