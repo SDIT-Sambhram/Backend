@@ -1,13 +1,19 @@
+import e from "express";
 import QRCode from "qrcode";
 
-export const generateQRCode = async (participantId) => {
+export const generateQRCode = async (participantId, eventCount) => {
   try {
     const qrUrl = `http://localhost:8081/verify/${participantId}`;
+
+    let color = '#000401';
+    if( eventCount === 4){
+      color = '#F5F5F5'
+    }
     
     // Generate QR code with white color for visibility as a base64 string
     const qrCodeDataUrl = await QRCode.toDataURL(qrUrl, {
       color: {
-        dark: '#000401',    // QR code color for high visibility
+        dark: color,    // QR code color for high visibility
         light: '#00000000'  // Transparent background
       },
       margin: 1,

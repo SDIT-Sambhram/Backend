@@ -65,7 +65,7 @@ export const updateTicketImage = async (participantId, name, phone, price, event
     console.log('Base ticket image exists.');
 
     // Generate QR code
-    const qrCodeBase64 = await generateQRCode(participantId);
+    const qrCodeBase64 = await generateQRCode(participantId, eventCount);
     const qrCodeImage = await generateQRCodeImage(qrCodeBase64);
     console.log('QR code generated successfully.');
 
