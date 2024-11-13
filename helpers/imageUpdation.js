@@ -18,16 +18,16 @@ const fileExists = async (filePath) => {
 
 // Helper function to generate QR code image
 const generateQRCodeImage = async (qrCodeBase64) => {
-  const Jimp = (await import('jimp')).default; // Dynamically import Jimp
+  const Jimp = await import('jimp'); // Import Jimp
   const qrCodeBuffer = Buffer.from(qrCodeBase64, 'base64');
   return await Jimp.read(qrCodeBuffer); // Returns a Jimp image object
 };
 
 // Helper function to generate text overlay image using Jimp
 const generateTextImage = async (name, phone, price, eventCount) => {
-  const Jimp = (await import('jimp')).default; // Dynamically import Jimp
+  const Jimp = await import('jimp'); // Import Jimp
   const font = await Jimp.loadFont(Jimp.FONT_SANS_16_WHITE); // Load a white font (16px size)
-  
+
   const canvasWidth = 300;
   const canvasHeight = 875;
 
@@ -46,7 +46,7 @@ const generateTextImage = async (name, phone, price, eventCount) => {
 // Main function to update ticket image
 export const updateTicketImage = async (participantId, name, phone, price, eventCount) => {
   try {
-    const Jimp = (await import('jimp')).default; // Dynamically import Jimp
+    const Jimp = await import('jimp'); // Import Jimp
 
     // Path to the base ticket image
     const baseTicketPath = path.join(__dirname, `../images/tickets/${eventCount}.png`);
