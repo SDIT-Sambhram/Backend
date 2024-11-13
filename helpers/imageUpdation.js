@@ -8,7 +8,7 @@ import { generateQRCode } from './qrCodeGenerator.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Modified wrapText function to return the ending Y position
+// Function to wrap text within a specified width and return new Y position
 const wrapText = (context, text, x, y, maxWidth, lineHeight) => {
   const words = text.split(' ');
   let line = '';
@@ -28,13 +28,14 @@ const wrapText = (context, text, x, y, maxWidth, lineHeight) => {
     }
   }
   context.fillText(line, x, lineY);
-  return lineY + lineHeight;  // Return new Y position after the last line
+  return lineY + lineHeight; // Return new Y position after the last line
 };
 
 // Function to create a text image overlay
 const generateTextImage = async (name, phone, price, eventCount) => {
-  const width = 300;
-  const height = 825;
+  const width = 600;  // Use larger canvas size
+  const height = 1650;  // Use larger canvas size
+  
   const fontPath1 = path.join(__dirname, 'assets', 'fonts', 'Montserrat-Regular.ttf');
   registerFont(fontPath1, { family: 'Montserrat' });
 
@@ -45,26 +46,24 @@ const generateTextImage = async (name, phone, price, eventCount) => {
   const context = canvas.getContext('2d');
   context.fillStyle = 'white';
 
-  const maxWidth = 280;
-  const lineHeight = 20;
+  const maxWidth = 560;
+  const lineHeight = 40;
 
   // Draw the name and get the new Y position for the next line
-
-  context.font = 'bolder 18px Montserrat-Bold';
-  const newY = wrapText(context, `Name: ${name}`, 16, 415, maxWidth, lineHeight);
+  context.font = 'bolder 36px Montserrat-Bold';  // Increase font size for sharpness
+  const newY = wrapText(context, `Name: ${name}`, 32, 830, maxWidth, lineHeight);
 
   // Draw the phone number below the wrapped name text
-  context.font = 'bolder 18px Montserrat-Bold';
-  context.fillText(`Phone: ${phone}`, 16, newY + 10);
+  context.font = 'bolder 36px Montserrat-Bold';
+  context.fillText(`Phone: ${phone}`, 32, newY + 20);
 
   // Draw event count and price at fixed positions
-  context.font = '16px Montserrat';
-  context.fillText(`${eventCount}`, 61, 535);
-  context.fillText(`${price}`, 170, 535);
+  context.font = '32px Montserrat';
+  context.fillText(`${eventCount}`, 122, 1070);
+  context.fillText(`${price}`, 340, 1070);
 
   return canvas.toBuffer('image/png');
 };
-
 
 // Main function to update ticket image
 export const updateTicketImage = async (participantId, name, phone, price, eventCount) => {
@@ -74,17 +73,20 @@ export const updateTicketImage = async (participantId, name, phone, price, event
       throw new Error('Base ticket image not found');
     }
 
+    // Generate the QR code at high resolution
     const qrCodeBase64 = await generateQRCode(participantId, eventCount);
     const qrCodeImage = Buffer.from(qrCodeBase64, 'base64');  // Convert base64 string to buffer
 
     const baseTicketImage = sharp(baseTicketPath);
     const textImageBuffer = await generateTextImage(name, phone, price, eventCount);
 
+    // Resize the generated text and QR code images to fit the base image size (300x825)
     const updatedImageBuffer = await baseTicketImage
       .composite([
         { input: textImageBuffer, top: 0, left: 0 },
-        { input: qrCodeImage, top: 635, left: 63 }
+        { input: qrCodeImage, top: 1270, left: 125 }  // Adjust QR code position
       ])
+      .resize(300, 825)  // Resize back to original size
       .png()
       .toBuffer();
 
