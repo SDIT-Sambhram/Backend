@@ -8,46 +8,60 @@ import sharp from 'sharp';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Function to update ticket image with participant details
+// Helper function to check if a file exists
+const fileExists = async (filePath) => {
+  try {
+    await fs.promises.access(filePath, fs.constants.F_OK);
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+// Helper function to generate SVG text
+const generateSVGText = (name, phone, price, eventCount) => {
+  return `
+    <svg width="300" height="825">
+      <text x="15" y="460" font-family="Arial" font-size="16" fill="white">Name: ${name}</text>
+      <text x="15" y="500" font-family="Arial" font-size="16" fill="white">Phone: ${phone}</text>
+      <text x="15" y="540" font-family="Arial" font-size="16" fill="white">Event Count: ${eventCount}</text>
+      <text x="15" y="580" font-family="Arial" font-size="16" fill="white">Price: ${price}</text>
+    </svg>
+  `;
+};
+
+// Helper function to resize QR code
+const generateQRCodeImage = async (qrCodeBase64) => {
+  const qrCodeBuffer = Buffer.from(qrCodeBase64, 'base64');
+  return sharp(qrCodeBuffer).resize(100, 100); // Resize QR code if needed
+};
+
+// Main function to update ticket image
 export const updateTicketImage = async (participantId, name, phone, price, eventCount) => {
   try {
     // Path to the base ticket image
     const baseTicketPath = path.join(__dirname, `../images/tickets/${eventCount}.png`);
     console.log('Base ticket path:', baseTicketPath);
 
-    // Generate the QR code base64 string using the provided data
-    const qrCodeBase64 = await generateQRCode(participantId);
-    const qrCodeBuffer = Buffer.from(qrCodeBase64, 'base64');
-    console.log('QR code generated successfully.');
-
-    // Ensure the base ticket image exists
-    const ticketExists = await fs.promises.access(baseTicketPath, fs.constants.F_OK)
-      .then(() => true)
-      .catch(() => false);
+    // Check if base ticket image exists
+    const ticketExists = await fileExists(baseTicketPath);
     if (!ticketExists) {
       throw new Error('Base ticket image not found at the specified path');
     }
     console.log('Base ticket image exists.');
 
+    // Generate QR code
+    const qrCodeBase64 = await generateQRCode(participantId);
+    const qrCodeImage = await generateQRCodeImage(qrCodeBase64);
+    console.log('QR code generated successfully.');
+
     // Load the base ticket image using sharp
-    let baseTicketImage = sharp(baseTicketPath);
+    const baseTicketImage = sharp(baseTicketPath);
 
-    // Create a simple SVG with text to overlay on the image
-    const svgText = `
-      <svg width="300" height="825">
-        <text x="15" y="460" font-family="Arial" font-size="16" fill="white">Name: ${name}</text>
-        <text x="15" y="500" font-family="Arial" font-size="16" fill="white">Phone: ${phone}</text>
-        <text x="15" y="540" font-family="Arial" font-size="16" fill="white">Event Count: ${eventCount}</text>
-        <text x="15" y="580" font-family="Arial" font-size="16" fill="white">Price: ${price}</text>
-      </svg>
-    `;
-
-    // Convert the SVG string into a buffer
+    // Generate SVG text buffer
+    const svgText = generateSVGText(name, phone, price, eventCount);
     const textImageBuffer = Buffer.from(svgText);
-
-    // Resize and composite the QR code onto the base image
-    const qrCodeImage = sharp(qrCodeBuffer).resize(100, 100);  // Resize QR code if needed
-
+    
     // Composite the text and QR code onto the base ticket image
     const updatedImageBuffer = await baseTicketImage
       .composite([
