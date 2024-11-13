@@ -38,7 +38,7 @@ const generateTextImage = async (name, phone, price, eventCount) => {
   const fontPath1 = path.join(__dirname, 'assets', 'fonts', 'Montserrat-Regular.ttf');
   registerFont(fontPath1, { family: 'Montserrat' });
 
-  const fontPath2 = path.join(__dirname, 'assets', 'fonts', 'Montserrat-bold.ttf');
+  const fontPath2 = path.join(__dirname, 'assets', 'fonts', 'Montserrat-Bold.ttf');
   registerFont(fontPath2, { family: 'Montserrat-Bold' });
 
   const canvas = createCanvas(width, height);
