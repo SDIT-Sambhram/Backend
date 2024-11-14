@@ -4,6 +4,7 @@ import { fileURLToPath } from 'url';
 import sharp from 'sharp';
 import { createCanvas, registerFont } from 'canvas';
 import { generateQRCode } from './qrCodeGenerator.js';
+import axios from 'axios';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -67,15 +68,16 @@ const generateTextImage = async (name, phone, price, eventCount) => {
 // Main function to update ticket image
 export const updateTicketImage = async (participantId, name, phone, price, eventCount) => {
   try {
-    const baseTicketPath = path.join(__dirname, `../images/tickets/${eventCount}.png`);
-    if (!fs.existsSync(baseTicketPath)) {
-      throw new Error('Base ticket image not found');
-    }
+    const baseTicketUrl = `https://sambhram-tickets-bucket.s3.ap-south-1.amazonaws.com/${eventCount}.png`;
+    
+    // Fetch the base ticket image from the URL
+    const response = await axios.get(baseTicketUrl, { responseType: 'arraybuffer' });
+    const baseTicketImageBuffer = Buffer.from(response.data, 'binary');
 
     const qrCodeBase64 = await generateQRCode(participantId, eventCount);
     const qrCodeImage = Buffer.from(qrCodeBase64, 'base64');  // Convert base64 string to buffer
 
-    const baseTicketImage = sharp(baseTicketPath);
+    const baseTicketImage = sharp(baseTicketImageBuffer);
     const textImageBuffer = await generateTextImage(name, phone, price, eventCount);
 
     const updatedImageBuffer = await baseTicketImage
