@@ -82,8 +82,8 @@ const generateTextImage = (name, phone, price, eventCount) => {
 
   // Draw event count and price
   context.font = '46px Montserrat';
-  context.fillText(`${eventCount}`, 205, 1905);
-  context.fillText(`${price}`, 532, 1905);
+  context.fillText(`${eventCount}`, 205, 2005);
+  context.fillText(`${price}`, 532, 2005);
 
   return canvasInstance.toBuffer('image/png');
 };
