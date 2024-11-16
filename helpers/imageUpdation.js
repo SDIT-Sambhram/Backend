@@ -1,11 +1,9 @@
 import path from 'path';
 import { fileURLToPath } from 'url';
 import sharp from 'sharp';
-import pkg from '@napi-rs/canvas';
+import { createCanvas, registerFont, loadImage } from 'canvas';
 import { generateQRCode } from './qrCodeGenerator.js';
 import axios from 'axios';
-
-const { createCanvas, GlobalFonts } = pkg;
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -39,10 +37,10 @@ const generateTextImage = async (name, phone, price, eventCount) => {
     const width = 938;
     const height = 3090;
     const fontPath1 = path.join(__dirname, 'assets', 'fonts', 'Montserrat-Regular.ttf');
-    GlobalFonts.registerFromPath(fontPath1, 'Montserrat');
+    registerFont(fontPath1, { family: 'Montserrat' });
 
     const fontPath2 = path.join(__dirname, 'assets', 'fonts', 'Montserrat-Bold.ttf');
-    GlobalFonts.registerFromPath(fontPath2, 'Montserrat-Bold');
+    registerFont(fontPath2, { family: 'Montserrat-Bold' });
 
     const canvas = createCanvas(width, height);
     const context = canvas.getContext('2d');
@@ -85,9 +83,13 @@ export const updateTicketImage = async (participantId, name, phone, price, event
     const baseTicketImageBuffer = Buffer.from(response.data, 'binary');
     const qrCodeImage = Buffer.from(qrCodeBase64, 'base64');  // Convert base64 string to buffer
 
-    const baseTicketImage = sharp(baseTicketImageBuffer);
+    // Generate the text image buffer
     const textImageBuffer = await generateTextImage(name, phone, price, eventCount);
 
+    // Load the base ticket image using sharp
+    const baseTicketImage = sharp(baseTicketImageBuffer);
+
+    // Composite the text and QR code images onto the base ticket image
     const updatedImageBuffer = await baseTicketImage
       .composite([
         { input: textImageBuffer, top: 0, left: 0 },

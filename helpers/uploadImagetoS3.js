@@ -20,9 +20,11 @@ export const uploadImageToS3 = async (fileName, imageBuffer) => {
     Body: imageBuffer,
     ContentType: 'image/png', // Adjust this if your image type varies
   };
-  console.log("Bucket:", process.env.AWS_BUCKET_NAME);
-  console.log("Key (fileName):", fileName);
-  console.log("Body (imageBuffer type):", typeof imageBuffer);
+
+  console.log("Uploading image to S3 with the following parameters:");
+  console.log("Bucket:", params.Bucket);
+  console.log("Key (fileName):", params.Key);
+  console.log("Body (imageBuffer type):", typeof params.Body);
 
   try {
     // Use the `PutObjectCommand` to upload to S3
@@ -33,6 +35,6 @@ export const uploadImageToS3 = async (fileName, imageBuffer) => {
     return imageUrl; // Return the URL of the uploaded image
   } catch (error) {
     console.error('Error uploading image to S3:', error);
-    throw error;
+    throw new Error(`Failed to upload image to S3: ${error.message}`);
   }
 };
