@@ -16,7 +16,7 @@ export const generateQRCode = async (participantId, eventCount) => {
         light: '#00000000'  // Transparent background
       },
       margin: 1,
-      width: 470  // Adjust width to increase the QR code size, if needed
+      width: 600  // Adjust width to increase the QR code size, if needed
     });
 
     // Remove the "data:image/png;base64," prefix and return only the base64 string
