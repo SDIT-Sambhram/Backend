@@ -95,7 +95,6 @@ export const updateTicketImage = async (participantId, name, phone, price, event
         { input: textImageBuffer, top: 0, left: 0 },
         { input: qrCodeImage, top: 2540, left: 250 }  // Adjusted position for the new height
       ])
-      .resize(500, 1659)  // Resize to the original ticket size
       .png()
       .toBuffer();
     return updatedImageBuffer;
