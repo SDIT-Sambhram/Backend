@@ -16,8 +16,8 @@ const loadFontAsBase64 = async (fontPath) => {
 
 // Generate an SVG string with embedded local fonts
 const generateSVGText = async (name, phone, price, eventCount) => {
-  const montserratFont = await loadFontAsBase64('/assets/fonts/Montserrat-Regular.ttf');
-  const montserratBoldFont = await loadFontAsBase64('/assets/fonts/Montserrat-Bold.ttf');
+  const montserratFont = await loadFontAsBase64('./assets/fonts/Montserrat-Regular.ttf');
+  const montserratBoldFont = await loadFontAsBase64('./assets/fonts/Montserrat-Bold.ttf');
 
   return `
     <svg xmlns="http://www.w3.org/2000/svg" width="938" height="3090">
