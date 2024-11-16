@@ -3,7 +3,7 @@ import { fileURLToPath } from 'url';
 import sharp from 'sharp';
 import { createCanvas, registerFont } from 'canvas';
 import { generateQRCode } from './qrCodeGenerator.js';
-import axios from 'axios';
+import fs from 'fs';  // File system module for local file access
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -67,11 +67,11 @@ const generateTextImage = async (name, phone, price, eventCount) => {
 // Main function to update ticket image
 export const updateTicketImage = async (participantId, name, phone, price, eventCount) => {
   try {
-    const baseTicketUrl = `https://sambhram-tickets-bucket.s3.ap-south-1.amazonaws.com/${eventCount}.png`;
+    // Update the base image path to point to the local .jpg file
+    const baseTicketPath = path.join(__dirname, 'assets', 'tickets', `${eventCount}.jpg`);
     
-    // Fetch the base ticket image from the URL
-    const response = await axios.get(baseTicketUrl, { responseType: 'arraybuffer' });
-    const baseTicketImageBuffer = Buffer.from(response.data, 'binary');
+    // Read the base ticket image from the local file system
+    const baseTicketImageBuffer = fs.readFileSync(baseTicketPath);
 
     const qrCodeBase64 = await generateQRCode(participantId, eventCount);
     const qrCodeImage = Buffer.from(qrCodeBase64, 'base64');  // Convert base64 string to buffer
@@ -84,7 +84,7 @@ export const updateTicketImage = async (participantId, name, phone, price, event
         { input: textImageBuffer, top: 0, left: 0 },
         { input: qrCodeImage, top: 2540, left: 250 }  // Adjusted position for the new height
       ])
-      .png()
+      .jpeg()  // Changed to .jpeg() as the base image is JPG
       .toBuffer();
 
     return updatedImageBuffer;
