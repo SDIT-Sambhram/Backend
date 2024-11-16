@@ -19,5 +19,6 @@ export const generateTicket = async (participantId, name, phone, price, eventCou
     return s3ImageUrl;
   } catch (error) {
     console.error("Error generating ticket:", error);
+    throw new Error('Failed to generate ticket');
   }
 };

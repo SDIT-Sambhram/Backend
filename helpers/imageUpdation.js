@@ -75,19 +75,18 @@ const generateTextImage = async (name, phone, price, eventCount) => {
 export const updateTicketImage = async (participantId, name, phone, price, eventCount) => {
   try {
     const baseTicketUrl = `https://sambhram-tickets-bucket.s3.ap-south-1.amazonaws.com/${eventCount}.png`;
-    
-    // Fetch the base ticket image from the URL
-    const response = await axios.get(baseTicketUrl, { responseType: 'arraybuffer' });
-    const baseTicketImageBuffer = Buffer.from(response.data, 'binary');
-    console.log('Base ticket image fetched successfully');
 
-    const qrCodeBase64 = await generateQRCode(participantId, eventCount);
+    // Fetch the base ticket image and generate the QR code in parallel
+    const [response, qrCodeBase64] = await Promise.all([
+      axios.get(baseTicketUrl, { responseType: 'arraybuffer' }),
+      generateQRCode(participantId, eventCount)
+    ]);
+
+    const baseTicketImageBuffer = Buffer.from(response.data, 'binary');
     const qrCodeImage = Buffer.from(qrCodeBase64, 'base64');  // Convert base64 string to buffer
-    console.log('QR code generated successfully');
 
     const baseTicketImage = sharp(baseTicketImageBuffer);
     const textImageBuffer = await generateTextImage(name, phone, price, eventCount);
-    console.log('Text image generated successfully');
 
     const updatedImageBuffer = await baseTicketImage
       .composite([
@@ -97,7 +96,6 @@ export const updateTicketImage = async (participantId, name, phone, price, event
       .png()
       .toBuffer();
 
-    console.log('Ticket image updated successfully');
     return updatedImageBuffer;
   } catch (error) {
     console.error('Error updating ticket image:', error);

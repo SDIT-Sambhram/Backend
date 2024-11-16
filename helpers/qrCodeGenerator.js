@@ -5,10 +5,10 @@ export const generateQRCode = async (participantId, eventCount) => {
     const qrUrl = `http://localhost:8081/verify/${participantId}`;
 
     let color = '#000401';
-    if( eventCount === 4){
-      color = '#F5F5F5'
+    if (eventCount === 4) {
+      color = '#F5F5F5';
     }
-    
+
     // Generate QR code with white color for visibility as a base64 string
     const qrCodeDataUrl = await QRCode.toDataURL(qrUrl, {
       color: {
