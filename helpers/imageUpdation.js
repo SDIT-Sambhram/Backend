@@ -132,8 +132,8 @@ export const updateTicketImage = async (participantId, name, phone, price, event
         },
         {
           input: qrCodeImage,
-          top: 2040,
-          left: 250
+          top: 2540,
+          left: 230
         }
       ])
       .jpeg({ quality: 85, mozjpeg: true }) // Optimize JPEG compression
