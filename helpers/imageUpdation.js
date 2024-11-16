@@ -50,15 +50,15 @@ const generateTextImage = async (name, phone, price, eventCount) => {
     const lineHeight = 40;
 
     // Draw the name and get the new Y position for the next line
-    context.font = 'bolder 36px Montserrat-Bold';
+    context.font = 'bolder 46px Montserrat-Bold';
     const newY = wrapText(context, `Name: ${name}`, 35, 1500, maxWidth, lineHeight);
 
     // Draw the phone number below the wrapped name text
-    context.font = 'bolder 36px Montserrat-Bold';
+    context.font = 'bolder 46px Montserrat-Bold';
     context.fillText(`Phone: ${phone}`, 35, newY + 40);
 
     // Draw event count and price at fixed positions
-    context.font = '32px Montserrat';
+    context.font = '35px Montserrat';
     context.fillText(`${eventCount}`, 122, 1700);
     context.fillText(`${price}`, 340, 1700);
 
@@ -95,9 +95,9 @@ export const updateTicketImage = async (participantId, name, phone, price, event
         { input: textImageBuffer, top: 0, left: 0 },
         { input: qrCodeImage, top: 2540, left: 250 }  // Adjusted position for the new height
       ])
+      .resize(500, 1659)  // Resize to the original ticket size
       .png()
       .toBuffer();
-
     return updatedImageBuffer;
   } catch (error) {
     console.error('Error updating ticket image:', error);
