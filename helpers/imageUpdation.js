@@ -1,11 +1,9 @@
 import path from 'path';
 import { fileURLToPath } from 'url';
 import sharp from 'sharp';
-import pkg from '@napi-rs/canvas';
+import { createCanvas, registerFont } from 'canvas';
 import { generateQRCode } from './qrCodeGenerator.js';
 import axios from 'axios';
-
-const { createCanvas, registerFont } = pkg;
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

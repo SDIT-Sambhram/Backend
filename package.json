@@ -12,7 +12,7 @@
   "description": "",
   "dependencies": {
     "@aws-sdk/client-s3": "^3.687.0",
-    "@napi-rs/canvas": "^0.1.62",
+    "canvas": "^2.11.2",
     "dotenv": "^16.4.5",
     "express": "^4.21.1",
     "express-rate-limit": "^7.4.1",
