@@ -37,9 +37,11 @@ const generateTextImage = async (name, phone, price, eventCount) => {
   const height = 3094;
   const fontPath1 = path.join(__dirname, 'assets', 'fonts', 'Montserrat-Regular.ttf');
   registerFont(fontPath1, { family: 'Montserrat' });
+  console.log('Font registered:', fontPath1);
 
   const fontPath2 = path.join(__dirname, 'assets', 'fonts', 'Montserrat-Bold.ttf');
   registerFont(fontPath2, { family: 'Montserrat-Bold' });
+  console.log('Font registered:', fontPath2); 
 
   const canvas = createCanvas(width, height);
   const context = canvas.getContext('2d');
@@ -69,6 +71,7 @@ export const updateTicketImage = async (participantId, name, phone, price, event
   try {
     // Update the base image path to point to the local .jpg file
     const baseTicketPath = path.join(__dirname, `../images/${eventCount}.jpg`);
+    console.log('Base ticket image path:', baseTicketPath);
     
     // Read the base ticket image from the local file system
     const baseTicketImageBuffer = fs.readFileSync(baseTicketPath);
@@ -86,6 +89,8 @@ export const updateTicketImage = async (participantId, name, phone, price, event
       ])
       .jpeg()  // Changed to .jpeg() as the base image is JPG
       .toBuffer();
+
+    console.log('Ticket image updated successfully');
 
     return updatedImageBuffer;
 
