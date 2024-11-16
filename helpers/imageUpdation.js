@@ -35,35 +35,40 @@ const wrapText = (context, text, x, y, maxWidth, lineHeight) => {
 
 // Function to create a text image overlay
 const generateTextImage = async (name, phone, price, eventCount) => {
-  const width = 938;
-  const height = 3090;
-  const fontPath1 = path.join(__dirname, 'assets', 'fonts', 'Montserrat-Regular.ttf');
-  GlobalFonts.registerFromPath(fontPath1, 'Montserrat');
+  try {
+    const width = 938;
+    const height = 3090;
+    const fontPath1 = path.join(__dirname, 'assets', 'fonts', 'Montserrat-Regular.ttf');
+    GlobalFonts.registerFromPath(fontPath1, 'Montserrat');
 
-  const fontPath2 = path.join(__dirname, 'assets', 'fonts', 'Montserrat-Bold.ttf');
-  GlobalFonts.registerFromPath(fontPath2, 'Montserrat-Bold');
+    const fontPath2 = path.join(__dirname, 'assets', 'fonts', 'Montserrat-Bold.ttf');
+    GlobalFonts.registerFromPath(fontPath2, 'Montserrat-Bold');
 
-  const canvas = createCanvas(width, height);
-  const context = canvas.getContext('2d');
-  context.fillStyle = 'white';
+    const canvas = createCanvas(width, height);
+    const context = canvas.getContext('2d');
+    context.fillStyle = 'white';
 
-  const maxWidth = 900;
-  const lineHeight = 40;
+    const maxWidth = 900;
+    const lineHeight = 40;
 
-  // Draw the name and get the new Y position for the next line
-  context.font = 'bolder 36px Montserrat-Bold';
-  const newY = wrapText(context, `Name: ${name}`, 35, 1500, maxWidth, lineHeight);
+    // Draw the name and get the new Y position for the next line
+    context.font = 'bolder 36px Montserrat-Bold';
+    const newY = wrapText(context, `Name: ${name}`, 35, 1500, maxWidth, lineHeight);
 
-  // Draw the phone number below the wrapped name text
-  context.font = 'bolder 36px Montserrat-Bold';
-  context.fillText(`Phone: ${phone}`, 35, newY + 40);
+    // Draw the phone number below the wrapped name text
+    context.font = 'bolder 36px Montserrat-Bold';
+    context.fillText(`Phone: ${phone}`, 35, newY + 40);
 
-  // Draw event count and price at fixed positions
-  context.font = '32px Montserrat';
-  context.fillText(`${eventCount}`, 122, 1700);
-  context.fillText(`${price}`, 340, 1700);
+    // Draw event count and price at fixed positions
+    context.font = '32px Montserrat';
+    context.fillText(`${eventCount}`, 122, 1700);
+    context.fillText(`${price}`, 340, 1700);
 
-  return canvas.toBuffer('image/png');
+    return canvas.toBuffer('image/png');
+  } catch (error) {
+    console.error('Error generating text image:', error);
+    throw new Error('Failed to generate text image');
+  }
 };
 
 // Main function to update ticket image
@@ -74,12 +79,15 @@ export const updateTicketImage = async (participantId, name, phone, price, event
     // Fetch the base ticket image from the URL
     const response = await axios.get(baseTicketUrl, { responseType: 'arraybuffer' });
     const baseTicketImageBuffer = Buffer.from(response.data, 'binary');
+    console.log('Base ticket image fetched successfully');
 
     const qrCodeBase64 = await generateQRCode(participantId, eventCount);
     const qrCodeImage = Buffer.from(qrCodeBase64, 'base64');  // Convert base64 string to buffer
+    console.log('QR code generated successfully');
 
     const baseTicketImage = sharp(baseTicketImageBuffer);
     const textImageBuffer = await generateTextImage(name, phone, price, eventCount);
+    console.log('Text image generated successfully');
 
     const updatedImageBuffer = await baseTicketImage
       .composite([
@@ -89,6 +97,7 @@ export const updateTicketImage = async (participantId, name, phone, price, event
       .png()
       .toBuffer();
 
+    console.log('Ticket image updated successfully');
     return updatedImageBuffer;
   } catch (error) {
     console.error('Error updating ticket image:', error);
