@@ -36,7 +36,7 @@ const wrapText = (context, text, x, y, maxWidth, lineHeight) => {
 // Function to create a text image overlay
 const generateTextImage = async (name, phone, price, eventCount) => {
   const width = 938;
-  const height = 3094;
+  const height = 3090;
   const fontPath1 = path.join(__dirname, 'assets', 'fonts', 'Montserrat-Regular.ttf');
   GlobalFonts.registerFromPath(fontPath1, 'Montserrat');
 
@@ -52,16 +52,16 @@ const generateTextImage = async (name, phone, price, eventCount) => {
 
   // Draw the name and get the new Y position for the next line
   context.font = 'bolder 36px Montserrat-Bold';
-  const newY = wrapText(context, `Name: ${name}`, 32, 830, maxWidth, lineHeight);
+  const newY = wrapText(context, `Name: ${name}`, 35, 1500, maxWidth, lineHeight);
 
   // Draw the phone number below the wrapped name text
   context.font = 'bolder 36px Montserrat-Bold';
-  context.fillText(`Phone: ${phone}`, 32, newY + 20);
+  context.fillText(`Phone: ${phone}`, 35, newY + 40);
 
   // Draw event count and price at fixed positions
   context.font = '32px Montserrat';
-  context.fillText(`${eventCount}`, 122, 1070);
-  context.fillText(`${price}`, 340, 1070);
+  context.fillText(`${eventCount}`, 122, 1700);
+  context.fillText(`${price}`, 340, 1700);
 
   return canvas.toBuffer('image/png');
 };
