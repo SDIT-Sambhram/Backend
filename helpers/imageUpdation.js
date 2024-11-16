@@ -1,10 +1,11 @@
 import path from 'path';
-import fs from 'fs';
 import { fileURLToPath } from 'url';
 import sharp from 'sharp';
-import { createCanvas, registerFont } from 'canvas';
+import pkg from '@napi-rs/canvas';
 import { generateQRCode } from './qrCodeGenerator.js';
 import axios from 'axios';
+
+const { createCanvas, registerFont } = pkg;
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -89,7 +90,6 @@ export const updateTicketImage = async (participantId, name, phone, price, event
       .toBuffer();
 
     return updatedImageBuffer;
-
   } catch (error) {
     console.error('Error updating ticket image:', error);
     throw new Error('Failed to update ticket image');
