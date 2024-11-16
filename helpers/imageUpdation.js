@@ -132,7 +132,7 @@ export const updateTicketImage = async (participantId, name, phone, price, event
         },
         {
           input: qrCodeImage,
-          top: 2330,
+          top: 2400,
           left: 170
         }
       ])
