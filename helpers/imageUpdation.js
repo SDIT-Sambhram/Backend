@@ -1,9 +1,11 @@
 import path from 'path';
 import { fileURLToPath } from 'url';
 import sharp from 'sharp';
-import { createCanvas, registerFont } from 'canvas';
+import pkg from '@napi-rs/canvas';
 import { generateQRCode } from './qrCodeGenerator.js';
 import axios from 'axios';
+
+const { createCanvas, GlobalFonts } = pkg;
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -36,10 +38,10 @@ const generateTextImage = async (name, phone, price, eventCount) => {
   const width = 938;
   const height = 3094;
   const fontPath1 = path.join(__dirname, 'assets', 'fonts', 'Montserrat-Regular.ttf');
-  registerFont(fontPath1, { family: 'Montserrat' });
+  GlobalFonts.registerFromPath(fontPath1, 'Montserrat');
 
   const fontPath2 = path.join(__dirname, 'assets', 'fonts', 'Montserrat-Bold.ttf');
-  registerFont(fontPath2, { family: 'Montserrat-Bold' });
+  GlobalFonts.registerFromPath(fontPath2, 'Montserrat-Bold');
 
   const canvas = createCanvas(width, height);
   const context = canvas.getContext('2d');
