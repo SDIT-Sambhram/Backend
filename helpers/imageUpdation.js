@@ -68,7 +68,7 @@ const generateTextImage = async (name, phone, price, eventCount) => {
 export const updateTicketImage = async (participantId, name, phone, price, eventCount) => {
   try {
     // Update the base image path to point to the local .jpg file
-    const baseTicketPath = path.join(__dirname, 'assets', 'tickets', `${eventCount}.jpg`);
+    const baseTicketPath = path.join(__dirname, `../images/${eventCount}.jpg`);
     
     // Read the base ticket image from the local file system
     const baseTicketImageBuffer = fs.readFileSync(baseTicketPath);
