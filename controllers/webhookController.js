@@ -100,7 +100,7 @@ export const razorpayWebhook = async (req, res) => {
         throw new Error(`Failed to update registration for order ID: ${orderId}`);
       }
     }
-
+    
     await session.commitTransaction();
 
     console.log(`Payment ${paymentStatus} processed for order: ${order_id}`);
