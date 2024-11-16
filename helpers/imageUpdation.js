@@ -81,9 +81,9 @@ const generateTextImage = (name, phone, price, eventCount) => {
   context.fillText(`Phone: ${phone}`, 50, newY + 50);
 
   // Draw event count and price
-  context.font = '40px Montserrat';
-  context.fillText(`${eventCount}`, 250, 1905);
-  context.fillText(`${price}`, 600, 1905);
+  context.font = '46px Montserrat';
+  context.fillText(`${eventCount}`, 220, 1905);
+  context.fillText(`${price}`, 530, 1905);
 
   return canvasInstance.toBuffer('image/png');
 };
@@ -132,7 +132,7 @@ export const updateTicketImage = async (participantId, name, phone, price, event
         },
         {
           input: qrCodeImage,
-          top: 2250,
+          top: 2400,
           left: 150
         }
       ])
