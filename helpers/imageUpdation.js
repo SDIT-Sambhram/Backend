@@ -1,101 +1,148 @@
 import path from 'path';
 import { fileURLToPath } from 'url';
 import sharp from 'sharp';
-import { createCanvas, registerFont } from 'canvas';
+import { createCanvas, registerFont, Canvas } from 'canvas';
 import { generateQRCode } from './qrCodeGenerator.js';
-import fs from 'fs';  // File system module for local file access
+import fs from 'fs/promises';  // Using promise-based fs
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Modified wrapText function to return the ending Y position
-const wrapText = (context, text, x, y, maxWidth, lineHeight) => {
-  const words = text.split(' ');
-  let line = '';
-  let lineY = y;
+// Cache for fonts registration
+let fontsRegistered = false;
 
-  for (let n = 0; n < words.length; n++) {
-    const testLine = line + words[n] + ' ';
-    const metrics = context.measureText(testLine);
-    const testWidth = metrics.width;
+// Cache for canvas instance
+let canvasInstance = null;
 
-    if (testWidth > maxWidth && n > 0) {
-      context.fillText(line, x, lineY);
-      line = words[n] + ' ';
-      lineY += lineHeight;
-    } else {
-      line = testLine;
-    }
-  }
-  context.fillText(line, x, lineY);
-  return lineY + lineHeight;  // Return new Y position after the last line
+// Cache for base ticket images
+const imageCache = new Map();
+
+// Initialize fonts and canvas once
+const initializeResources = () => {
+  if (fontsRegistered) return;
+
+  registerFont(
+    path.join(__dirname, 'assets', 'fonts', 'Montserrat-Regular.ttf'),
+    { family: 'Montserrat' }
+  );
+  registerFont(
+    path.join(__dirname, 'assets', 'fonts', 'Montserrat-Bold.ttf'),
+    { family: 'Montserrat-Bold' }
+  );
+
+  canvasInstance = createCanvas(938, 3094);
+  fontsRegistered = true;
 };
 
-// Function to create a text image overlay
-const generateTextImage = async (name, phone, price, eventCount) => {
-  const width = 938;
-  const height = 3094;
-  const fontPath1 = path.join(__dirname, 'assets', 'fonts', 'Montserrat-Regular.ttf');
-  registerFont(fontPath1, { family: 'Montserrat' });
-  console.log('Font registered:', fontPath1);
+// Optimized text wrapping with pre-calculated metrics
+const wrapText = (context, text, x, y, maxWidth, lineHeight) => {
+  const words = text.split(' ');
+  const lines = [];
+  let currentLine = words[0];
 
-  const fontPath2 = path.join(__dirname, 'assets', 'fonts', 'Montserrat-Bold.ttf');
-  registerFont(fontPath2, { family: 'Montserrat-Bold' });
-  console.log('Font registered:', fontPath2); 
+  for (let i = 1; i < words.length; i++) {
+    const word = words[i];
+    const width = context.measureText(`${currentLine} ${word}`).width;
+    
+    if (width < maxWidth) {
+      currentLine += ` ${word}`;
+    } else {
+      lines.push(currentLine);
+      currentLine = word;
+    }
+  }
+  lines.push(currentLine);
 
-  const canvas = createCanvas(width, height);
-  const context = canvas.getContext('2d');
+  let lineY = y;
+  for (const line of lines) {
+    context.fillText(line, x, lineY);
+    lineY += lineHeight;
+  }
+  
+  return lineY;
+};
+
+// Generate text overlay with reused canvas
+const generateTextImage = (name, phone, price, eventCount) => {
+  const context = canvasInstance.getContext('2d');
+  
+  // Clear previous content
+  context.clearRect(0, 0, canvasInstance.width, canvasInstance.height);
+  
   context.fillStyle = 'white';
-
   const maxWidth = 900;
   const lineHeight = 40;
 
-  // Draw the name and get the new Y position for the next line
+  // Draw name
   context.font = 'bolder 36px Montserrat-Bold';
   const newY = wrapText(context, `Name: ${name}`, 32, 830, maxWidth, lineHeight);
 
-  // Draw the phone number below the wrapped name text
-  context.font = 'bolder 36px Montserrat-Bold';
+  // Draw phone
   context.fillText(`Phone: ${phone}`, 32, newY + 20);
 
-  // Draw event count and price at fixed positions
+  // Draw event count and price
   context.font = '32px Montserrat';
   context.fillText(`${eventCount}`, 122, 1070);
   context.fillText(`${price}`, 340, 1070);
 
-  return canvas.toBuffer('image/png');
+  return canvasInstance.toBuffer('image/png');
 };
 
-// Main function to update ticket image
+// Load and cache base image
+const getBaseImage = async (eventCount) => {
+  const cacheKey = `event_${eventCount}`;
+  
+  if (!imageCache.has(cacheKey)) {
+    const imagePath = path.join(__dirname, `../images/${eventCount}.jpg`);
+    const imageBuffer = await fs.readFile(imagePath);
+    const image = sharp(imageBuffer);
+    imageCache.set(cacheKey, image);
+    
+    // Limit cache size
+    if (imageCache.size > 10) {
+      const firstKey = imageCache.keys().next().value;
+      imageCache.delete(firstKey);
+    }
+  }
+  
+  return imageCache.get(cacheKey);
+};
+
 export const updateTicketImage = async (participantId, name, phone, price, eventCount) => {
   try {
-    // Update the base image path to point to the local .jpg file
-    const baseTicketPath = path.join(__dirname, `../images/${eventCount}.jpg`);
-    console.log('Base ticket image path:', baseTicketPath);
-    
-    // Read the base ticket image from the local file system
-    const baseTicketImageBuffer = fs.readFileSync(baseTicketPath);
+    // Initialize resources if not already done
+    initializeResources();
 
-    const qrCodeBase64 = await generateQRCode(participantId, eventCount);
-    const qrCodeImage = Buffer.from(qrCodeBase64, 'base64');  // Convert base64 string to buffer
+    // Parallel processing for independent operations
+    const [baseImage, qrCodeBase64] = await Promise.all([
+      getBaseImage(eventCount),
+      generateQRCode(participantId, eventCount)
+    ]);
 
-    const baseTicketImage = sharp(baseTicketImageBuffer);
-    const textImageBuffer = await generateTextImage(name, phone, price, eventCount);
+    const qrCodeImage = Buffer.from(qrCodeBase64, 'base64');
+    const textImageBuffer = generateTextImage(name, phone, price, eventCount);
 
-    const updatedImageBuffer = await baseTicketImage
+    // Process image with sharp pipeline
+    const updatedImageBuffer = await baseImage.clone()
       .composite([
-        { input: textImageBuffer, top: 0, left: 0 },
-        { input: qrCodeImage, top: 2540, left: 250 }  // Adjusted position for the new height
+        {
+          input: textImageBuffer,
+          top: 0,
+          left: 0
+        },
+        {
+          input: qrCodeImage,
+          top: 2540,
+          left: 250
+        }
       ])
-      .jpeg()  // Changed to .jpeg() as the base image is JPG
+      .jpeg({ quality: 85, mozjpeg: true }) // Optimize JPEG compression
       .toBuffer();
-
-    console.log('Ticket image updated successfully');
 
     return updatedImageBuffer;
 
   } catch (error) {
-    console.error('Error updating ticket image:', error);
+    console.error('Error updating ticket image:', error.message);
     throw new Error('Failed to update ticket image');
   }
 };
