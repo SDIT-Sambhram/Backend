@@ -1,73 +1,29 @@
-import path from 'path';
-import { fileURLToPath } from 'url';
 import sharp from 'sharp';
-import { createCanvas, registerFont, loadImage } from 'canvas';
-import { generateQRCode } from './qrCodeGenerator.js';
 import axios from 'axios';
+import { generateQRCode } from './qrCodeGenerator.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-// Modified wrapText function to return the ending Y position
-const wrapText = (context, text, x, y, maxWidth, lineHeight) => {
-  const words = text.split(' ');
-  let line = '';
-  let lineY = y;
-
-  for (let n = 0; n < words.length; n++) {
-    const testLine = line + words[n] + ' ';
-    const metrics = context.measureText(testLine);
-    const testWidth = metrics.width;
-
-    if (testWidth > maxWidth && n > 0) {
-      context.fillText(line, x, lineY);
-      line = words[n] + ' ';
-      lineY += lineHeight;
-    } else {
-      line = testLine;
-    }
-  }
-  context.fillText(line, x, lineY);
-  return lineY + lineHeight;  // Return new Y position after the last line
-};
-
-// Function to create a text image overlay
-const generateTextImage = async (name, phone, price, eventCount) => {
-  try {
-    const width = 938;
-    const height = 3090;
-    const fontPath1 = path.join(__dirname, 'assets', 'fonts', 'Montserrat-Regular.ttf');
-    registerFont(fontPath1, { family: 'Montserrat' });
-
-    const fontPath2 = path.join(__dirname, 'assets', 'fonts', 'Montserrat-Bold.ttf');
-    registerFont(fontPath2, { family: 'Montserrat-Bold' });
-
-    const canvas = createCanvas(width, height);
-    const context = canvas.getContext('2d');
-    context.fillStyle = 'white';
-
-    const maxWidth = 900;
-    const lineHeight = 40;
-
-    // Draw the name and get the new Y position for the next line
-    context.font = 'bolder 46px Montserrat-Bold';
-    const newY = wrapText(context, `Name: ${name}`, 35, 1500, maxWidth, lineHeight);
-
-    // Draw the phone number below the wrapped name text
-    context.font = 'bolder 46px Montserrat-Bold';
-    context.fillText(`Phone: ${phone}`, 35, newY + 40);
-
-    // Draw event count and price at fixed positions
-    context.font = '35px Montserrat';
-    context.fillText(`${eventCount}`, 122, 1700);
-    context.fillText(`${price}`, 340, 1700);
-
-    return canvas.toBuffer('image/png');
-  } catch (error) {
-    console.error('Error generating text image:', error);
-    throw new Error('Failed to generate text image');
-  }
-};
+// Generate an SVG string with embedded fonts
+const generateSVGText = (name, phone, price, eventCount) => `
+  <svg xmlns="http://www.w3.org/2000/svg" width="938" height="3090">
+    <style>
+      @font-face {
+        font-family: 'Montserrat';
+        src: url('https://fonts.gstatic.com/s/montserrat/v20/JTUSjIg1_i6t8kCHKm45_cJD3gnD-w.ttf') format('truetype');
+      }
+      @font-face {
+        font-family: 'Montserrat-Bold';
+        src: url('https://fonts.gstatic.com/s/montserrat/v20/JTURjIg1_i6t8kCHKm45_dJE3gnD-w.ttf') format('truetype');
+      }
+      .header { font-family: 'Montserrat-Bold'; font-size: 46px; fill: white; }
+      .details { font-family: 'Montserrat'; font-size: 35px; fill: white; }
+    </style>
+    <rect width="100%" height="100%" fill="transparent" />
+    <text x="35" y="1500" class="header">Name: ${name}</text>
+    <text x="35" y="1550" class="header">Phone: ${phone}</text>
+    <text x="122" y="1700" class="details">${eventCount}</text>
+    <text x="340" y="1700" class="details">${price}</text>
+  </svg>
+`;
 
 // Main function to update ticket image
 export const updateTicketImage = async (participantId, name, phone, price, eventCount) => {
@@ -81,22 +37,21 @@ export const updateTicketImage = async (participantId, name, phone, price, event
     ]);
 
     const baseTicketImageBuffer = Buffer.from(response.data, 'binary');
-    const qrCodeImage = Buffer.from(qrCodeBase64, 'base64');  // Convert base64 string to buffer
+    const qrCodeImage = Buffer.from(qrCodeBase64, 'base64'); // Convert base64 string to buffer
 
-    // Generate the text image buffer
-    const textImageBuffer = await generateTextImage(name, phone, price, eventCount);
+    // Generate SVG text as a buffer
+    const svgText = generateSVGText(name, phone, price, eventCount);
+    const svgBuffer = Buffer.from(svgText);
 
-    // Load the base ticket image using sharp
-    const baseTicketImage = sharp(baseTicketImageBuffer);
-
-    // Composite the text and QR code images onto the base ticket image
-    const updatedImageBuffer = await baseTicketImage
+    // Composite the SVG and QR code images onto the base ticket image
+    const updatedImageBuffer = await sharp(baseTicketImageBuffer)
       .composite([
-        { input: textImageBuffer, top: 0, left: 0 },
-        { input: qrCodeImage, top: 2540, left: 250 }  // Adjusted position for the new height
+        { input: svgBuffer, top: 0, left: 0 },
+        { input: qrCodeImage, top: 2540, left: 250 } // Adjusted position for the new height
       ])
       .png()
       .toBuffer();
+
     return updatedImageBuffer;
   } catch (error) {
     console.error('Error updating ticket image:', error);
