@@ -1,20 +1,23 @@
 import sharp from 'sharp';
 import axios from 'axios';
-import fs from 'fs/promises'; // Use to read local font files
 import { generateQRCode } from './qrCodeGenerator.js';
+import fs from 'fs/promises';
+import { fileURLToPath } from 'url';
 import path from 'path';
 
-const loadFontAsBase64 = async (fontPath) => {
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const loadFontAsBase64 = async (relativeFontPath) => {
   try {
-    const absolutePath = path.resolve(__dirname, fontPath);
-    const fontData = await fs.readFile(absolutePath);
+    const absoluteFontPath = path.join(__dirname, relativeFontPath);
+    const fontData = await fs.readFile(absoluteFontPath);
     return `data:font/ttf;base64,${fontData.toString('base64')}`;
   } catch (error) {
-    console.error(`Error loading font from path ${fontPath}:`, error);
+    console.error(`Error loading font from path ${relativeFontPath}:`, error);
     throw new Error('Failed to load font');
   }
 };
-
 
 // Generate an SVG string with embedded local fonts
 const generateSVGText = async (name, phone, price, eventCount) => {
