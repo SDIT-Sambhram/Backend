@@ -71,10 +71,10 @@ const generateTextImage = (name, phone, price, eventCount, participantId) => {
   
   // Clear previous content
   context.clearRect(0, 0, canvasInstance.width, canvasInstance.height);
-  let color = black;
+  let color = 'black';
 
   if (eventCount === 4) {
-    color = white;
+    color = 'white';
   }
   context.fillStyle = color;
   const maxWidth = 900;
