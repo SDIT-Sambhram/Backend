@@ -76,7 +76,7 @@ const generateTextImage = (name, phone, price, eventCount, participantId) => {
   if (eventCount === 4) {
     color = 'white';
   }
-  context.fillStyle = color;
+  context.fillStyle = white;
   const maxWidth = 900;
   const lineHeight = 50;
 
@@ -97,6 +97,7 @@ const generateTextImage = (name, phone, price, eventCount, participantId) => {
   context.fillText(`${eventCount}`, 205, 1975);
   context.fillText(`${price}`, 532, 1975);
 
+  context.fillStyle = color;
   context.font = '40px Montserrat';
   context.fillText(`ID - ${participantId}`, 150, 3005);
 
