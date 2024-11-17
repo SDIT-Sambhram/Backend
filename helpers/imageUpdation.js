@@ -80,19 +80,21 @@ const generateTextImage = (name, phone, price, eventCount, participantId) => {
   context.font = '47px Montserrat';
   context.fillText('Name:', 48, 1580);
   context.font = 'bolder 47px Montserrat-Bold';
-  const newY = wrapText(context, name, 210, 1580, maxWidth, lineHeight);
+  const newY = wrapText(context, name, 250, 1580, maxWidth, lineHeight);
 
   // Draw phone
   context.font = '47px Montserrat';
   context.fillText('Phone:', 48, newY + 50);
   context.font = 'bolder 47px Montserrat-Bold';
-  context.fillText(phone, 210, newY + 50);
+  context.fillText(phone, 260, newY + 50);
 
   // Draw event count and price
   context.font = '47px Montserrat';
   context.fillText(`${eventCount}`, 205, 2005);
   context.fillText(`${price}`, 532, 2005);
-  context.fillText(`${participantId}`, 150, 2505);
+
+  context.font = '40px Montserrat';
+  context.fillText(`ParticipantID - ${participantId}`, 150, 3005);
 
 
   return canvasInstance.toBuffer('image/png');
