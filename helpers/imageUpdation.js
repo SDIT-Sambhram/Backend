@@ -77,7 +77,7 @@ const generateTextImage = (name, phone, price, eventCount, participantId) => {
     color = 'white';
   }
   context.fillStyle = 'white';
-  const maxWidth = 900;
+  const maxWidth = 800;
   const lineHeight = 50;
 
   // Draw name

@@ -2,7 +2,7 @@ import QRCode from "qrcode";
 
 export const generateQRCode = async (participantId, eventCount) => {
   try {
-    const qrUrl = `http://shreedevisambhram.in.s3-website.ap-south-1.amazonaws.com/verify?id=${participantId}`;
+    const qrUrl = `https://shreedevisambhram.in/verify?id=${participantId}`;
     let color = '#000401';
     if (eventCount === 4) {
       color = '#F5F5F5';
