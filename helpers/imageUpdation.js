@@ -1,12 +1,15 @@
 import path from 'path';
 import { fileURLToPath } from 'url';
 import sharp from 'sharp';
-import { createCanvas, registerFont, Canvas } from 'canvas';
+import { createCanvas, registerFont } from 'canvas';
 import { generateQRCode } from './qrCodeGenerator.js';
 import fs from 'fs/promises';  // Using promise-based fs
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+// Set the FONTCONFIG_PATH environment variable
+process.env.FONTCONFIG_PATH = path.join(__dirname, 'fonts');
 
 // Cache for fonts registration
 let fontsRegistered = false;
@@ -22,11 +25,11 @@ const initializeResources = () => {
   if (fontsRegistered) return;
 
   registerFont(
-    path.join(__dirname, 'assets', 'fonts', 'Montserrat-Regular.ttf'),
+    path.join(__dirname, 'fonts', 'Montserrat-Regular.ttf'),
     { family: 'Montserrat' }
   );
   registerFont(
-    path.join(__dirname, 'assets', 'fonts', 'Montserrat-Bold.ttf'),
+    path.join(__dirname, 'fonts', 'Montserrat-Bold.ttf'),
     { family: 'Montserrat-Bold' }
   );
 
@@ -74,11 +77,16 @@ const generateTextImage = (name, phone, price, eventCount) => {
   const lineHeight = 50;
 
   // Draw name
+  context.font = '46px Montserrat';
+  context.fillText('Name:', 50, 1580);
   context.font = 'bolder 46px Montserrat-Bold';
-  const newY = wrapText(context, `Name: ${name}`, 50, 1580, maxWidth, lineHeight);
+  const newY = wrapText(context, name, 200, 1580, maxWidth, lineHeight);
 
   // Draw phone
-  context.fillText(`Phone: ${phone}`, 50, newY + 50);
+  context.font = '46px Montserrat';
+  context.fillText('Phone:', 50, newY + 50);
+  context.font = 'bolder 46px Montserrat-Bold';
+  context.fillText(phone, 200, newY + 50);
 
   // Draw event count and price
   context.font = '46px Montserrat';
