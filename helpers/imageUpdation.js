@@ -77,7 +77,7 @@ const generateTextImage = (name, phone, price, eventCount, participantId) => {
     color = 'white';
   }
   context.fillStyle = 'white';
-  const maxWidth = 500;
+  const maxWidth = 700;
   const lineHeight = 50;
 
   // Draw name
@@ -99,7 +99,7 @@ const generateTextImage = (name, phone, price, eventCount, participantId) => {
 
   context.fillStyle = color;
   context.font = '44x Montserrat';
-  context.fillText(`ID - ${participantId}`, 130, 3005);
+  context.fillText(`ID - ${participantId}`, 95, 3005);
 
 
   return canvasInstance.toBuffer('image/png');
