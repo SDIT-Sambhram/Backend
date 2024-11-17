@@ -21,10 +21,6 @@ app.use(morgan("dev"));   // Logging middleware
 // Routes
 app.use("/api/v1/auth", authRoutes);
 
-app.listen(3000, () => {
-    console.log("Server is running on port 3000");
-});
-
 // Root endpoint
 app.get("/", (request, response) => {
     response.send("Server is up and running");
