@@ -66,7 +66,7 @@ const wrapText = (context, text, x, y, maxWidth, lineHeight) => {
 };
 
 // Generate text overlay with reused canvas
-const generateTextImage = (name, phone, price, eventCount) => {
+const generateTextImage = (name, phone, price, eventCount, participantId) => {
   const context = canvasInstance.getContext('2d');
   
   // Clear previous content
@@ -77,21 +77,23 @@ const generateTextImage = (name, phone, price, eventCount) => {
   const lineHeight = 50;
 
   // Draw name
-  context.font = '46px Montserrat';
-  context.fillText('Name:', 50, 1580);
-  context.font = 'bolder 46px Montserrat-Bold';
-  const newY = wrapText(context, name, 200, 1580, maxWidth, lineHeight);
+  context.font = '47px Montserrat';
+  context.fillText('Name:', 48, 1580);
+  context.font = 'bolder 47px Montserrat-Bold';
+  const newY = wrapText(context, name, 210, 1580, maxWidth, lineHeight);
 
   // Draw phone
-  context.font = '46px Montserrat';
-  context.fillText('Phone:', 50, newY + 50);
-  context.font = 'bolder 46px Montserrat-Bold';
-  context.fillText(phone, 200, newY + 50);
+  context.font = '47px Montserrat';
+  context.fillText('Phone:', 48, newY + 50);
+  context.font = 'bolder 47px Montserrat-Bold';
+  context.fillText(phone, 210, newY + 50);
 
   // Draw event count and price
-  context.font = '46px Montserrat';
-  context.fillText(`${eventCount}`, 205, 1905);
-  context.fillText(`${price}`, 532, 1905);
+  context.font = '47px Montserrat';
+  context.fillText(`${eventCount}`, 205, 2005);
+  context.fillText(`${price}`, 532, 2005);
+  context.fillText(`${participantId}`, 150, 2505);
+
 
   return canvasInstance.toBuffer('image/png');
 };
@@ -128,7 +130,7 @@ export const updateTicketImage = async (participantId, name, phone, price, event
     ]);
 
     const qrCodeImage = Buffer.from(qrCodeBase64, 'base64');
-    const textImageBuffer = generateTextImage(name, phone, price, eventCount);
+    const textImageBuffer = generateTextImage(name, phone, price, eventCount, participantId);
 
     // Process image with sharp pipeline
     const updatedImageBuffer = await baseImage.clone()
