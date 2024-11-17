@@ -71,8 +71,12 @@ const generateTextImage = (name, phone, price, eventCount, participantId) => {
   
   // Clear previous content
   context.clearRect(0, 0, canvasInstance.width, canvasInstance.height);
-  
-  context.fillStyle = 'white';
+  let color = black;
+
+  if (eventCount === 4) {
+    color = white;
+  }
+  context.fillStyle = color;
   const maxWidth = 900;
   const lineHeight = 50;
 
@@ -90,11 +94,11 @@ const generateTextImage = (name, phone, price, eventCount, participantId) => {
 
   // Draw event count and price
   context.font = '47px Montserrat';
-  context.fillText(`${eventCount}`, 205, 2005);
-  context.fillText(`${price}`, 532, 2005);
+  context.fillText(`${eventCount}`, 205, 1975);
+  context.fillText(`${price}`, 532, 1975);
 
   context.font = '40px Montserrat';
-  context.fillText(`ParticipantID - ${participantId}`, 150, 3005);
+  context.fillText(`ID - ${participantId}`, 150, 3005);
 
 
   return canvasInstance.toBuffer('image/png');
