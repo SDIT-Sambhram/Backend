@@ -76,7 +76,7 @@ const generateTextImage = (name, phone, price, eventCount, participantId) => {
   if (eventCount === 4) {
     color = 'white';
   }
-  context.fillStyle = white;
+  context.fillStyle = 'white';
   const maxWidth = 900;
   const lineHeight = 50;
 
