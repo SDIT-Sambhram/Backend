@@ -8,8 +8,7 @@ import fs from 'fs/promises';  // Using promise-based fs
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Set the FONTCONFIG_PATH environment variable
-process.env.FONTCONFIG_PATH = path.join(__dirname, 'fonts');
+'..\fonts.conf' = path.join(__dirname, 'fonts');
 
 // Cache for fonts registration
 let fontsRegistered = false;
