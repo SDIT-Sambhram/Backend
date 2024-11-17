@@ -65,7 +65,7 @@ export const razorpayWebhook = async (req, res) => {
     const ticketPromises = isPaid ?
       participant.registrations
         .filter(reg => orderIds.includes(reg.order_id))
-        .map(reg => generateTicket(participant._id, participant.name, phone, price, events.length)) :
+        .map(reg => generateTicket(participant._id, participant.name, phone, price, events.length, order_id)) :
       [];
 
     const imageUrls = await Promise.all(ticketPromises);

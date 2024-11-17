@@ -119,7 +119,8 @@ export const registerParticipant = [
                 orderId: order.id,
                 amount: order.amount,
                 currency: order.currency,
-                participantId // Send participantId to the frontend
+                participantId,
+                orderId:order.id
             });
 
         } catch (error) {

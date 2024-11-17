@@ -1,7 +1,7 @@
 import { updateTicketImage } from '../helpers/imageUpdation.js';
 import { uploadImageToS3 } from '../helpers/uploadImagetoS3.js';
 
-export const generateTicket = async (participantId, name, phone, price, eventCount) => {
+export const generateTicket = async (participantId, name, phone, price, eventCount, order_id) => {
   try {
     console.log('Generating ticket for:', participantId);
 
@@ -11,7 +11,7 @@ export const generateTicket = async (participantId, name, phone, price, eventCou
     console.log('Ticket image updated successfully', updatedImageBuffer);
 
     // S3 Key based on participant ID
-    const s3Key = `tickets/${participantId}.jpg`;
+    const s3Key = `tickets/${participantId}/${order_id}.jpg`;
 
     // Upload the image buffer directly to S3
     const s3ImageUrl = await uploadImageToS3(s3Key, updatedImageBuffer);
