@@ -3,31 +3,28 @@ import mongoose from "mongoose";
 import { validationResult } from 'express-validator';
 import { createOrder } from "../controllers/paymentController.js";
 import registrationLimiter from '../middlewares/rateLimiter.js';
-import { validateInputs } from '../helpers/validation.js';
 
 const MAX_EVENTS = 4;
 
-// Optimized for O(1) lookup using Set
+// Helper function: Check if user can register for new events
 const canRegisterForEvents = (existingRegistrations, newRegistrations) => {
-    // Pre-filter failed payments - O(n) where n is number of existing registrations
-    const activeRegistrations = existingRegistrations.filter(reg => reg.payment_status !== 'failed' && reg.payment_status !== null);
-    
+    const activeRegistrations = existingRegistrations.filter(
+        reg => reg.payment_status !== 'failed' && reg.payment_status !== null
+    );
+
     if (activeRegistrations.length >= MAX_EVENTS) {
         return { 
             canRegister: false, 
-            message: `User can register for up to ${MAX_EVENTS} unique events` 
+            message: `User can register for up to ${MAX_EVENTS} unique events`
         };
     }
 
-    // Create Set for O(1) lookup - O(n) one-time operation
     const existingEventIds = new Set(activeRegistrations.map(reg => reg.event_id.toString()));
-    
-    // Check for conflicts - O(m) where m is number of new registrations
     for (const reg of newRegistrations) {
         if (existingEventIds.has(reg.event_id.toString())) {
             return { 
                 canRegister: false, 
-                message: 'User has already registered for the following events' 
+                message: 'User has already registered for some of these events' 
             };
         }
     }
@@ -35,13 +32,27 @@ const canRegisterForEvents = (existingRegistrations, newRegistrations) => {
     return { canRegister: true };
 };
 
+// Helper function: Retry Axios requests
+const retryAxios = async (axiosCall, retries = 3, delay = 1000) => {
+    for (let i = 0; i < retries; i++) {
+        try {
+            return await axiosCall();
+        } catch (error) {
+            if (i === retries - 1 || error.response?.status !== 503) throw error;
+            await new Promise(res => setTimeout(res, delay));
+        }
+    }
+};
+
+// Main registration function
 export const registerParticipant = [
+    // Middlewares
     // registrationLimiter,
-    // validateInputs,
     async (req, res) => {
         let session;
+
         try {
-            // Quick validation checks - O(1)
+            // Validate request body
             if (!req.body.name || !req.body.usn || !req.body.phone || !req.body.college || !req.body.registrations?.length) {
                 return res.status(400).json({ message: "Missing required fields" });
             }
@@ -53,21 +64,20 @@ export const registerParticipant = [
 
             const { name, usn, college, phone, amount, registrations } = req.body;
 
-            // Start both operations concurrently - Parallel execution
+            // Fetch existing participant and create order concurrently
             const [existingParticipant, order] = await Promise.all([
-                // Only fetch necessary fields using projection
                 Participant.findOne(
                     { phone }, 
                     { 'registrations.event_id': 1, 'registrations.payment_status': 1 }
                 ).lean(),
-                createOrder(amount, phone, registrations)
+                retryAxios(() => createOrder(amount, phone, registrations))
             ]);
 
             if (!order) {
-                throw new Error('Order creation failed');
+                return res.status(500).json({ message: 'Order creation failed' });
             }
 
-            // Prepare registrations with order ID - O(m)
+            // Prepare new registrations
             const newRegistrations = registrations.map(reg => ({
                 event_id: reg.event_id,
                 order_id: order.id,
@@ -90,16 +100,13 @@ export const registerParticipant = [
                     return res.status(400).json({ message });
                 }
 
-                // Single atomic update operation - O(1)
                 await Participant.updateOne(
                     { phone },
                     { $push: { registrations: { $each: newRegistrations } } },
                     { session }
                 );
-
-                participantId = existingParticipant._id; // Use existing participant ID
+                participantId = existingParticipant._id;
             } else {
-                // Insert new participant and capture the created ID
                 const newParticipant = await Participant.create([{
                     name,
                     usn,
@@ -107,12 +114,10 @@ export const registerParticipant = [
                     college,
                     registrations: newRegistrations
                 }], { session });
-                
-                participantId = newParticipant[0]._id; // Capture the new participant's ID
+                participantId = newParticipant[0]._id;
             }
 
             await session.commitTransaction();
-            
             return res.status(201).json({
                 success: true,
                 message: 'User registered successfully, awaiting payment confirmation',
@@ -120,22 +125,23 @@ export const registerParticipant = [
                 amount: order.amount,
                 currency: order.currency,
                 participantId,
-                orderId:order.id
             });
 
         } catch (error) {
             if (session?.inTransaction()) {
                 await session.abortTransaction();
             }
-            console.error('Error during registration:', error);
-            return res.status(500).json({ 
-                message: 'Internal Server Error', 
-                error: error.message 
+
+            console.error('Error during registration:', error.message);
+            return res.status(500).json({
+                message: 'Internal Server Error',
+                error: error.message,
             });
+
         } finally {
             if (session) {
                 await session.endSession();
             }
-        }
-    }
+      }
+    }
 ];
