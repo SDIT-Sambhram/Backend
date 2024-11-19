@@ -56,9 +56,9 @@ export const registerParticipant = [
         try {
             // Validate input
             // const errors = validationResult(req);
-            if (!errors.isEmpty()) {
-                return res.status(400).json({ errors: errors.array() });
-            }
+            // if (!errors.isEmpty()) {
+            //     return res.status(400).json({ errors: errors.array() });
+            // }
 
             const { name, usn, college, phone, amount, registrations } = req.body;
 
