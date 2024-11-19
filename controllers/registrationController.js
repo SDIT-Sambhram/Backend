@@ -2,16 +2,32 @@ import Participant from "../models/Participant.js";
 import mongoose from "mongoose";
 import { validationResult } from 'express-validator';
 import { createOrder } from "../controllers/paymentController.js";
-import registrationLimiter from '../middlewares/rateLimiter.js';
-import { validateInputs } from '../helpers/validation.js';
+import { MAX_EVENTS } from "../constants.js"; // Centralized constant for max events
 
-const MAX_EVENTS = 4;
+// Retry utility with exponential backoff
+const retryWithBackoff = async (fn, retries = 3, delay = 1000) => {
+    while (retries > 0) {
+        try {
+            return await fn();
+        } catch (error) {
+            if (retries > 1) {
+                console.warn(`Retrying after delay (${delay}ms)...`);
+                await new Promise(resolve => setTimeout(resolve, delay));
+                delay *= 2; // Exponential backoff
+                retries--;
+            } else {
+                throw error; // Exhausted retries
+            }
+        }
+    }
+};
 
-// Optimized for O(1) lookup using Set
+// Check if user can register for new events
 const canRegisterForEvents = (existingRegistrations, newRegistrations) => {
-    // Pre-filter failed payments - O(n) where n is number of existing registrations
-    const activeRegistrations = existingRegistrations.filter(reg => reg.payment_status !== 'failed' && reg.payment_status !== null);
-    
+    const activeRegistrations = existingRegistrations.filter(
+        reg => reg.payment_status !== 'failed' && reg.payment_status !== null
+    );
+
     if (activeRegistrations.length >= MAX_EVENTS) {
         return { 
             canRegister: false, 
@@ -19,15 +35,13 @@ const canRegisterForEvents = (existingRegistrations, newRegistrations) => {
         };
     }
 
-    // Create Set for O(1) lookup - O(n) one-time operation
     const existingEventIds = new Set(activeRegistrations.map(reg => reg.event_id.toString()));
-    
-    // Check for conflicts - O(m) where m is number of new registrations
+
     for (const reg of newRegistrations) {
         if (existingEventIds.has(reg.event_id.toString())) {
             return { 
                 canRegister: false, 
-                message: 'User has already registered for the following events' 
+                message: 'User has already registered for one or more of these events' 
             };
         }
     }
@@ -36,16 +50,10 @@ const canRegisterForEvents = (existingRegistrations, newRegistrations) => {
 };
 
 export const registerParticipant = [
-    // registrationLimiter,
-    // validateInputs,
     async (req, res) => {
         let session;
         try {
-            // Quick validation checks - O(1)
-            if (!req.body.name || !req.body.usn || !req.body.phone || !req.body.college || !req.body.registrations?.length) {
-                return res.status(400).json({ message: "Missing required fields" });
-            }
-
+            // Validate input
             const errors = validationResult(req);
             if (!errors.isEmpty()) {
                 return res.status(400).json({ errors: errors.array() });
@@ -53,25 +61,21 @@ export const registerParticipant = [
 
             const { name, usn, college, phone, amount, registrations } = req.body;
 
-            console.log('Starting registration process for:', phone);
+            if (!name || !usn || !phone || !college || !registrations?.length) {
+                return res.status(400).json({ message: "Missing required fields" });
+            }
 
-            // Start both operations concurrently - Parallel execution
-            const [existingParticipant, order] = await Promise.all([
-                // Only fetch necessary fields using projection
-                Participant.findOne(
-                    { phone }, 
-                    { 'registrations.event_id': 1, 'registrations.payment_status': 1 }
-                ).lean(),
-                createOrder(amount, phone, registrations)
-            ]);
+            console.log('Starting registration for:', phone);
+
+            // Retryable operation: Create Razorpay order
+            const order = await retryWithBackoff(() => createOrder(amount, phone, registrations), 3, 1000);
 
             if (!order) {
                 throw new Error('Order creation failed');
             }
 
-            console.log('Order created successfully:', order.id);
+            console.log('Razorpay order created:', order.id);
 
-            // Prepare registrations with order ID - O(m)
             const newRegistrations = registrations.map(reg => ({
                 event_id: reg.event_id,
                 order_id: order.id,
@@ -79,10 +83,18 @@ export const registerParticipant = [
                 registration_date: new Date()
             }));
 
+            // Start MongoDB session
             session = await mongoose.startSession();
             session.startTransaction();
 
+            // Fetch participant details
+            const existingParticipant = await Participant.findOne(
+                { phone },
+                { 'registrations.event_id': 1, 'registrations.payment_status': 1 }
+            ).session(session);
+
             let participantId;
+
             if (existingParticipant) {
                 const { canRegister, message } = canRegisterForEvents(
                     existingParticipant.registrations, 
@@ -94,17 +106,18 @@ export const registerParticipant = [
                     return res.status(400).json({ message });
                 }
 
-                // Single atomic update operation - O(1)
+                // Update existing participant
                 await Participant.updateOne(
                     { phone },
                     { $push: { registrations: { $each: newRegistrations } } },
                     { session }
                 );
 
-                participantId = existingParticipant._id; // Use existing participant ID
+                participantId = existingParticipant._id;
                 console.log('Updated existing participant:', participantId);
+
             } else {
-                // Insert new participant and capture the created ID
+                // Create new participant
                 const newParticipant = await Participant.create([{
                     name,
                     usn,
@@ -112,14 +125,15 @@ export const registerParticipant = [
                     college,
                     registrations: newRegistrations
                 }], { session });
-                
-                participantId = newParticipant[0]._id; // Capture the new participant's ID
+
+                participantId = newParticipant[0]._id;
                 console.log('Created new participant:', participantId);
             }
 
+            // Commit transaction
             await session.commitTransaction();
             console.log('Transaction committed successfully');
-            
+
             return res.status(201).json({
                 success: true,
                 message: 'User registered successfully, awaiting payment confirmation',
@@ -133,10 +147,11 @@ export const registerParticipant = [
             if (session?.inTransaction()) {
                 await session.abortTransaction();
             }
-            console.error('Error during registration:', error);
-            return res.status(500).json({ 
-                message: 'Internal Server Error', 
-                error: error.message 
+            console.error('Error during registration:', error.stack || error.message);
+
+            return res.status(500).json({
+                message: 'Internal Server Error',
+                error: error.message
             });
         } finally {
             if (session) {
