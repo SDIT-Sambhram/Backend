@@ -2,7 +2,8 @@ import Participant from "../models/Participant.js";
 import mongoose from "mongoose";
 import { validationResult } from 'express-validator';
 import { createOrder } from "../controllers/paymentController.js";
-import { MAX_EVENTS } from "../constants.js"; // Centralized constant for max events
+
+const MAX_EVENTS = 4;
 
 // Retry utility with exponential backoff
 const retryWithBackoff = async (fn, retries = 3, delay = 1000) => {
@@ -54,7 +55,7 @@ export const registerParticipant = [
         let session;
         try {
             // Validate input
-            const errors = validationResult(req);
+            // const errors = validationResult(req);
             if (!errors.isEmpty()) {
                 return res.status(400).json({ errors: errors.array() });
             }
