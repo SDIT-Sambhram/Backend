@@ -53,6 +53,8 @@ export const registerParticipant = [
 
             const { name, usn, college, phone, amount, registrations } = req.body;
 
+            console.log('Starting registration process for:', phone);
+
             // Start both operations concurrently - Parallel execution
             const [existingParticipant, order] = await Promise.all([
                 // Only fetch necessary fields using projection
@@ -66,6 +68,8 @@ export const registerParticipant = [
             if (!order) {
                 throw new Error('Order creation failed');
             }
+
+            console.log('Order created successfully:', order.id);
 
             // Prepare registrations with order ID - O(m)
             const newRegistrations = registrations.map(reg => ({
@@ -98,6 +102,7 @@ export const registerParticipant = [
                 );
 
                 participantId = existingParticipant._id; // Use existing participant ID
+                console.log('Updated existing participant:', participantId);
             } else {
                 // Insert new participant and capture the created ID
                 const newParticipant = await Participant.create([{
@@ -109,9 +114,11 @@ export const registerParticipant = [
                 }], { session });
                 
                 participantId = newParticipant[0]._id; // Capture the new participant's ID
+                console.log('Created new participant:', participantId);
             }
 
             await session.commitTransaction();
+            console.log('Transaction committed successfully');
             
             return res.status(201).json({
                 success: true,
