@@ -39,6 +39,8 @@ export const razorpayWebhook = async (req, res) => {
     const price = amount / 100;
     const isPaid = paymentStatus === 'captured';
 
+    console.log(`Processing payment for order: ${order_id}, status: ${paymentStatus}`);
+
     // Start transaction and database operations in parallel
     session = await mongoose.startSession();
     session.startTransaction();
@@ -58,6 +60,7 @@ export const razorpayWebhook = async (req, res) => {
     ).session(session);
 
     if (!participant) {
+      console.error('No matching participant or registration found for phone:', phone, 'and order ID:', order_id);
       throw new Error('No matching participant or registration found');
     }
 
@@ -97,6 +100,7 @@ export const razorpayWebhook = async (req, res) => {
       );
 
       if (result.modifiedCount === 0) {
+        console.error('Failed to update registration for order ID:', orderId);
         throw new Error(`Failed to update registration for order ID: ${orderId}`);
       }
     }
