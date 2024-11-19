@@ -86,7 +86,7 @@ export const registerParticipant = [
                 );
 
                 if (!canRegister) {
-                    await session.endSession();
+                    await session.abortTransaction();
                     return res.status(400).json({ message });
                 }
 
@@ -120,7 +120,6 @@ export const registerParticipant = [
                 amount: order.amount,
                 currency: order.currency,
                 participantId,
-                orderId:order.id
             });
 
         } catch (error) {
@@ -136,6 +135,6 @@ export const registerParticipant = [
             if (session) {
                 await session.endSession();
             }
-        }
-    }
+        }
+    }
 ];
