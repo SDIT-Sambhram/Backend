@@ -52,102 +52,76 @@ export const razorpayWebhook = async (req, res) => {
       amount
     } = payload.payment.entity;
 
+    if (!order_id || !phone || !events) {
+      console.error('Invalid payload:', req.body);
+      return res.status(400).json({ message: 'Invalid payload' });
+    }
+
     const price = amount / 100;
     const isPaid = paymentStatus === 'captured';
-
-    console.log(`Processing payment for order: ${order_id}, status: ${paymentStatus}`);
 
     session = await mongoose.startSession();
     session.startTransaction();
 
-    // Retryable operation: Fetch participant
-    const participant = await retryWithBackoff(async () => {
-      return Participant.findOne(
+    const participant = await retryWithBackoff(async () =>
+      Participant.findOne(
         {
           phone,
-          'registrations.order_id': { $in: order_id.split(',') },
+          'registrations.order_id': { $in: [order_id] },
           'registrations.payment_status': { $in: [null, 'failed'] }
         },
-        {
-          name: 1,
-          phone: 1,
-          registrations: 1
-        }
-      ).session(session);
-    }, 3, 1000);
+        { name: 1, phone: 1, registrations: 1 }
+      ).session(session)
+    );
 
     if (!participant) {
-      console.error('No matching participant or registration found for phone:', phone, 'and order ID:', order_id);
+      console.error('No matching participant or registration found:', { phone, order_id });
       throw new Error('No matching participant or registration found');
     }
 
-    const orderIds = order_id.split(',');
-
-    // Generate tickets with retry logic
-    const ticketPromises = isPaid
-      ? participant.registrations
-          .filter(reg => orderIds.includes(reg.order_id))
-          .map(reg =>
-            retryWithBackoff(() =>
-              generateTicket(participant._id, participant.name, phone, price, events.length, order_id)
-            )
-          )
-      : [];
-
-    const imageUrls = await Promise.all(ticketPromises);
-
-    // Update each matching registration with retry
-    for (const orderId of orderIds) {
-      const updateOperation = {
-        $set: {
-          'registrations.$[elem].payment_status': isPaid ? 'paid' : 'failed',
-          'registrations.$[elem].registration_date': new Date()
-        }
-      };
-
-      const imageUrl = imageUrls.shift();
-      if (imageUrl) {
-        updateOperation.$set['registrations.$[elem].ticket_url'] = imageUrl;
-      }
-
-      const updateResult = await retryWithBackoff(async () => {
-        return Participant.updateOne(
-          {
-            phone,
-            'registrations.order_id': orderId
-          },
-          updateOperation,
-          {
-            session,
-            arrayFilters: [{ 'elem.order_id': orderId }]
-          }
-        );
-      });
-
-      if (updateResult.modifiedCount === 0) {
-        console.error('Failed to update registration for order ID:', orderId);
-        throw new Error(`Failed to update registration for order ID: ${orderId}`);
-      }
+    if (participant.registrations.some(reg => reg.order_id === order_id && reg.payment_status === 'paid')) {
+      console.log('Duplicate webhook detected, skipping...');
+      return res.status(200).json({ message: 'Duplicate webhook' });
     }
+
+    const ticketUrl = isPaid
+      ? await retryWithBackoff(() =>
+          generateTicket(participant._id, participant.name, phone, price, events.length, order_id)
+        )
+      : null;
+
+    const updateOperation = {
+      $set: {
+        'registrations.$[elem].payment_status': isPaid ? 'paid' : 'failed',
+        'registrations.$[elem].registration_date': new Date(),
+        ...(ticketUrl && { 'registrations.$[elem].ticket_url': ticketUrl })
+      }
+    };
+
+    await retryWithBackoff(async () =>
+      Participant.updateOne(
+        {
+          phone,
+          'registrations.order_id': order_id
+        },
+        updateOperation,
+        {
+          session,
+          arrayFilters: [{ 'elem.order_id': order_id }]
+        }
+      )
+    );
 
     await session.commitTransaction();
 
     console.log(`Payment ${paymentStatus} processed for order: ${order_id}`);
-    console.log('Webhook payload:', payload);
-
-    return res.status(200).json({
-      message: 'Webhook processed successfully'
-    });
-
+    return res.status(200).json({ message: 'Webhook processed successfully' });
   } catch (error) {
     if (session?.inTransaction()) {
       await session.abortTransaction();
     }
     console.error('Webhook processing error:', error);
-    return res.status(500).json({
-      message: 'Internal Server Error',
-      error: error.message
-    });
+    return res.status(500).json({ message: 'Internal Server Error', error: error.message });
   } finally {
     if (session) {
       await session.endSession();
