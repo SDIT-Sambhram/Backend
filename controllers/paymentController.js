@@ -2,9 +2,25 @@ import razorpayInstance from "../configs/razorpay.js";
 import crypto from "crypto";
 
 // Create an order
-export const createOrder = async (amount, phone, registrations) => {
+export const createOrder = async (phone, registrations) => {
     try {
+        let amount;
 
+        const eventLength = registrations.length;
+
+        const eventPricing = {
+            1: 100,
+            2: 160,
+            3: 220,
+            4: 250
+        };
+        
+        if (eventLength in eventPricing) {
+            amount = eventPricing[eventLength];
+        } else {
+            console.log("You can't have more than 4 events");
+        }
+        
         const options = {
             amount: amount * 100,  // Amount in paise
             currency: "INR",

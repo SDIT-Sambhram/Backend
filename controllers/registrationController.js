@@ -1,8 +1,9 @@
 import Participant from "../models/Participant.js";
 import mongoose from "mongoose";
-import { validationResult } from 'express-validator';
 import { createOrder } from "../controllers/paymentController.js";
-
+import { validateInputs } from "../helpers/validation.js";
+import { validationResult } from "express-validator";
+import registrationLimiter from "../middlewares/rateLimiter.js";
 const MAX_EVENTS = 4;
 
 // Retry utility with exponential backoff
@@ -51,25 +52,26 @@ const canRegisterForEvents = (existingRegistrations, newRegistrations) => {
 };
 
 export const registerParticipant = [
+    // Add validation middleware
+    validateInputs,
+    registrationLimiter,
+    
+    // Main registration logic
     async (req, res) => {
         let session;
         try {
-            // Validate input
-            // const errors = validationResult(req);
-            // if (!errors.isEmpty()) {
-            //     return res.status(400).json({ errors: errors.array() });
-            // }
-
-            const { name, usn, college, phone, amount, registrations } = req.body;
-
-            if (!name || !usn || !phone || !college || !registrations?.length) {
-                return res.status(400).json({ message: "Missing required fields" });
+            // Validate input errors
+            const errors = validationResult(req);
+            if (!errors.isEmpty()) {
+                return res.status(400).json({ errors: errors.array() });
             }
+
+            const { name, usn, college, phone, registrations } = req.body;
 
             console.log('Starting registration for:', phone);
 
             // Retryable operation: Create Razorpay order
-            const order = await retryWithBackoff(() => createOrder(amount, phone, registrations), 3, 1000);
+            const order = await retryWithBackoff(() => createOrder(phone, registrations), 3, 1000);
 
             if (!order) {
                 throw new Error('Order creation failed');
@@ -80,7 +82,7 @@ export const registerParticipant = [
             const newRegistrations = registrations.map(reg => ({
                 event_id: reg.event_id,
                 order_id: order.id,
-                amount,
+                amount: order.amount,
                 registration_date: new Date()
             }));
 
