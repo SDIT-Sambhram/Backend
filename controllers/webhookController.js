@@ -1,17 +1,3 @@
-import Participant from "../models/Participant.js";
-import crypto from "crypto";
-import { generateTicket } from "../controllers/ticketGeneration.js";
-
-// Helper function for signature validation
-const validateSignature = (reqBody, receivedSignature, webhookSecret) => {
-  const expectedSignature = crypto
-    .createHmac("sha256", webhookSecret)
-    .update(JSON.stringify(reqBody))
-    .digest("hex");
-  
-  return receivedSignature === expectedSignature;
-};
-
 export const razorpayWebhook = async (req, res) => {
   const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET;
 
@@ -64,6 +50,28 @@ export const razorpayWebhook = async (req, res) => {
       const event_id = event.event_id;
       console.log(`Processing registration for event: ${event_id}`);
 
+      // Check if participant is already registered for this event and has not failed previously
+      const existingRegistration = participant.registrations.find(
+        (reg) => reg.event_id.toString() === event_id
+      );
+
+      // If registration exists and payment failed, update the status to 'failed'
+      if (existingRegistration && existingRegistration.payment_status === "failed") {
+        existingRegistration.payment_status = isPaid ? "paid" : "failed";
+        existingRegistration.razorpay_payment_id = razorpay_payment_id;
+        existingRegistration.ticket_url = isPaid
+          ? await generateTicket(
+              participant._id,
+              participant.name,
+              phone,
+              amount / 100,
+              registrations.length,
+              order_id
+            )
+          : "failed";
+        existingRegistration.registration_date = new Date();
+      } else if (!existingRegistration) {
+        // If no registration exists for this event, create a new registration
         const ticketUrl = isPaid
           ? await generateTicket(
               participant._id,
@@ -84,12 +92,15 @@ export const razorpayWebhook = async (req, res) => {
           razorpay_payment_id,
           registration_date: new Date(),
         });
+      }
     }
 
+    // Add new registrations to the participant's registrations array
     if (newRegistrations.length > 0) {
       participant.registrations.push(...newRegistrations);
     }
 
+    // Save participant with updated registrations
     await participant.save({ session });
     console.log(`Participant data saved for phone: ${phone}`);
 
