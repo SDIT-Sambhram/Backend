@@ -32,76 +32,65 @@ export const razorpayWebhook = async (req, res) => {
   const { id: razorpay_payment_id, order_id, amount, status, notes = {} } = payload.payment.entity;
   const { college, name, phone, registrations, usn } = notes;
 
-  let session = null;
-
   try {
-    // Start transaction
-    session = await mongoose.startSession();
-    await session.withTransaction(async () => {
-      // Find or create participant
-      let participant = await Participant.findOne({ phone }).session(session);
-      logger.info(`Found participant: ${participant ? participant._id : "None"}`);
+    // Find or create participant
+    let participant = await Participant.findOne({ phone });
+    logger.info(`Found participant: ${participant ? participant._id : "None"}`);
 
-      if (!participant) {
-        participant = new Participant({
-          name,
-          usn,
-          phone,
-          college,
-          registrations: [],
-        });
-        logger.info(`Created new participant: ${phone}`);
-      }
+    if (!participant) {
+      participant = new Participant({
+        name,
+        usn,
+        phone,
+        college,
+        registrations: [],
+      });
+      logger.info(`Created new participant: ${phone}`);
+    }
 
-      // Check for duplicate payment
-      const existingPayment = participant.registrations.find(
-        (reg) => reg.razorpay_payment_id === razorpay_payment_id
-      );
-      if (existingPayment) {
-        logger.warn(`Duplicate payment detected: ${razorpay_payment_id}`);
-        return;
-      }
+    // Check for duplicate payment
+    const existingPayment = participant.registrations.find(
+      (reg) => reg.razorpay_payment_id === razorpay_payment_id
+    );
+    if (existingPayment) {
+      logger.warn(`Duplicate payment detected: ${razorpay_payment_id}`);
+      return;
+    }
 
-      // Process registrations
-      const isPaid = status === "captured";
-      const newRegistrations = await Promise.all(
-        registrations.map(async (event) => {
-          const { event_id } = event;
-          const ticketUrl = isPaid
-            ? await generateTicket(
-                participant._id,
-                participant.name,
-                phone,
-                amount / 100,
-                registrations.length,
-                order_id
-              )
-            : "failed";
+    // Process registrations
+    const isPaid = status === "captured";
+    const newRegistrations = await Promise.all(
+      registrations.map(async (event) => {
+        const { event_id } = event;
+        const ticketUrl = isPaid
+          ? await generateTicket(
+              participant._id,
+              participant.name,
+              phone,
+              amount / 100,
+              registrations.length,
+              order_id
+            )
+          : "failed";
 
-          return {
-            event_id,
-            ticket_url: ticketUrl,
-            amount: amount / 100,
-            order_id,
-            payment_status: isPaid ? "paid" : "failed",
-            razorpay_payment_id,
-            registration_date: new Date(),
-            ...event,
-          };
-        })
-      );
+        return {
+          event_id,
+          ticket_url: ticketUrl,
+          amount: amount / 100,
+          order_id,
+          payment_status: isPaid ? "paid" : "failed",
+          razorpay_payment_id,
+          registration_date: new Date(),
+          ...event,
+        };
+      })
+    );
 
-      participant.registrations.push(...newRegistrations);
-      await participant.save({ session });
-      logger.info(`Participant data saved successfully: ${phone}`);
-    }, {
-      // Transaction options
-      maxTimeMS: 30000, // 30 second timeout
-      readConcern: { level: "snapshot" },
-      writeConcern: { w: "majority" }
-    });
+    participant.registrations.push(...newRegistrations);
+    await participant.save();
+    logger.info(`Participant data saved successfully: ${phone}`);
+    logger.info(`Processing completed successfully: ${razorpay_payment_id}`);
 
-    logger.info(`Transaction completed successfully: ${razorpay_payment_id}`);
   } catch (error) {
     logger.error("Error processing webhook:", {
       error: error.message,
@@ -109,10 +98,5 @@ export const razorpayWebhook = async (req, res) => {
       paymentId: razorpay_payment_id,
       phone
     });
-  } finally {
-    if (session) {
-      await session.endSession();
-      logger.debug("Session ended");
-    }
   }
 };
