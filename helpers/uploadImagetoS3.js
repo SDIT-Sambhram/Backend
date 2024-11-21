@@ -1,6 +1,6 @@
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 import dotenv from 'dotenv';
-import logger from '../utils/logger';
+import logger from '../utils/logger.js';
 
 dotenv.config();
 
