@@ -1,4 +1,4 @@
-import updateTicketImage from '../helpers/imageUpdation.js';
+import { updateTicketImage } from '../helpers/imageUpdation.js';
 import { uploadImageToS3 } from '../helpers/uploadImagetoS3.js';
 
 export const generateTicket = async (participantId, name, phone, price, eventCount, order_id) => {
