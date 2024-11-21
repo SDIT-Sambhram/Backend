@@ -26,10 +26,12 @@ export const razorpayWebhook = async (req, res) => {
   const { payload } = req.body; 
   console.log("Razorpay webhook payload:", payload);
   const { id: razorpay_payment_id, order_id, amount, status, notes = {} } = payload.payment.entity;
+  console.log("Razorpay payment details:", { razorpay_payment_id, order_id, amount, status, notes });
 
   // Early validation of participant details in notes
-  const { name, usn, phone, college, registrations } = notes;
+  const {college, name,  phone,  registrations, usn } = notes;
   if (!name || !phone || !usn || !college || !Array.isArray(registrations)) {
+    console.log("Incomplete or invalid participant details in notes");
     return res.status(400).json({ error: "Incomplete or invalid participant details in notes" });
   }
 

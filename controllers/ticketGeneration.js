@@ -11,7 +11,7 @@ export const generateTicket = async (participantId, name, phone, price, eventCou
     console.log('Ticket image updated successfully', updatedImageBuffer);
 
     // S3 Key based on participant ID
-    const s3Key = `tickets/${participantId}/${order_id}.jpg`;
+    const s3Key = `tickets/${order_id}.jpg`;
 
     // Upload the image buffer directly to S3
     const s3ImageUrl = await uploadImageToS3(s3Key, updatedImageBuffer);
