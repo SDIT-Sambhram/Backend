@@ -2,7 +2,6 @@ import Participant from "../models/Participant.js";
 import crypto from "crypto";
 import mongoose from "mongoose";
 import { generateTicket } from "../controllers/ticketGeneration.js";
-import logger from "../utils/logger.js";
 
 const validateSignature = (reqBody, receivedSignature, webhookSecret) => {
   const expectedSignature = crypto
@@ -19,7 +18,7 @@ export const razorpayWebhook = async (req, res) => {
 
   // Validate webhook signature
   if (!validateSignature(req.body, receivedSignature, webhookSecret)) {
-    logger.error("Invalid Razorpay webhook signature");
+    console.error("Invalid Razorpay webhook signature");
     return res.status(400).json({ error: "Invalid signature" });
   }
 
@@ -27,19 +26,20 @@ export const razorpayWebhook = async (req, res) => {
   res.status(200).json({ success: true, message: "Webhook received" });
 
   const { payload } = req.body;
-  logger.info(`Processing Razorpay webhook payload: ${JSON.stringify(payload)}`);
+  console.log("Processing Razorpay webhook payload:", JSON.stringify(payload, null, 2));
 
   const { id: razorpay_payment_id, order_id, amount, status, notes = {} } = payload.payment.entity;
   const { college, name, phone, registrations, usn } = notes;
-  console.log(college, name, phone, registrations, usn);
+  console.log("Payment details:", { college, name, phone, registrations, usn });
 
   try {
     // Find or create participant with better error handling
     let participant = await Participant.findOne({ phone });
-    logger.info(`Participant lookup result: ${participant ? 'Found existing' : 'Not found'} for phone: ${phone}`);
+    console.log(`Participant lookup result: ${participant ? 'Found existing' : 'Not found'} for phone: ${phone}`);
 
     if (!participant) {
       // Create new participant
+      console.log("Creating new participant with data:", { name, usn, phone, college });
       const newParticipant = new Participant({
         name,
         usn,
@@ -50,14 +50,22 @@ export const razorpayWebhook = async (req, res) => {
 
       try {
         participant = await newParticipant.save();
-        logger.info(`Created new participant with ID: ${participant._id} for phone: ${phone}`);
+        console.log(`Created new participant with ID: ${participant._id} for phone: ${phone}`);
+        
+        // Verify the participant was created
+        const verifyParticipant = await Participant.findById(participant._id);
+        if (!verifyParticipant) {
+          throw new Error("Failed to verify newly created participant");
+        }
+        console.log("Verified new participant creation:", verifyParticipant);
       } catch (saveError) {
-        logger.error(`Failed to save new participant:`, {
+        console.error("Failed to save new participant:", {
           error: saveError.message,
+          validationErrors: saveError.errors,
           phone,
           name
         });
-        throw saveError; // Re-throw to be caught by outer catch block
+        throw saveError;
       }
     }
 
@@ -71,18 +79,18 @@ export const razorpayWebhook = async (req, res) => {
       (reg) => reg.razorpay_payment_id === razorpay_payment_id
     );
     if (existingPayment) {
-      logger.warn(`Duplicate payment detected: ${razorpay_payment_id}`);
+      console.warn(`Duplicate payment detected: ${razorpay_payment_id}`);
       return;
     }
 
     // Process registrations
     const isPaid = status === "captured";
-    logger.info(`Processing registrations for payment status: ${status}`);
+    console.log(`Processing registrations for payment status: ${status}`);
 
     const newRegistrations = await Promise.all(
       registrations.map(async (event) => {
         const { event_id } = event;
-        logger.info(`Generating ticket for event_id: ${event_id}`);
+        console.log(`Generating ticket for event_id: ${event_id}`);
 
         const ticketUrl = isPaid
           ? await generateTicket(
@@ -95,7 +103,7 @@ export const razorpayWebhook = async (req, res) => {
             )
           : "failed";
 
-        logger.info(`Ticket generation ${ticketUrl === 'failed' ? 'failed' : 'succeeded'} for event_id: ${event_id}`);
+        console.log(`Ticket generation ${ticketUrl === 'failed' ? 'failed' : 'succeeded'} for event_id: ${event_id}`);
 
         return {
           event_id,
@@ -115,9 +123,9 @@ export const razorpayWebhook = async (req, res) => {
     
     try {
       await participant.save();
-      logger.info(`Successfully saved registrations for participant: ${participant._id}, phone: ${phone}`);
+      console.log(`Successfully saved registrations for participant: ${participant._id}, phone: ${phone}`);
     } catch (saveError) {
-      logger.error(`Failed to save registrations:`, {
+      console.error("Failed to save registrations:", {
         error: saveError.message,
         participantId: participant._id,
         phone
@@ -125,10 +133,10 @@ export const razorpayWebhook = async (req, res) => {
       throw saveError;
     }
 
-    logger.info(`Webhook processing completed successfully for payment: ${razorpay_payment_id}`);
+    console.log(`Webhook processing completed successfully for payment: ${razorpay_payment_id}`);
 
   } catch (error) {
-    logger.error("Error processing webhook:", {
+    console.error("Error processing webhook:", {
       error: error.message,
       stack: error.stack,
       paymentId: razorpay_payment_id,
