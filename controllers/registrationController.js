@@ -4,6 +4,8 @@ import { createOrder } from "../controllers/paymentController.js";
 import { validateInputs } from "../helpers/validation.js";
 import { validationResult } from "express-validator";
 import registrationLimiter from "../middlewares/rateLimiter.js";
+import he from "he"; // Import the 'he' library
+
 const MAX_EVENTS = 4;
 
 // Retry utility with exponential backoff
@@ -68,7 +70,8 @@ export const registerParticipant = [
 
             const { name, usn, college, phone, registrations } = req.body;
 
-            console.log('Starting registration for:', phone);
+            // Decode the college name
+            const decodedCollege = he.decode(college);
 
             // Retryable operation: Create Razorpay order
             const order = await retryWithBackoff(() => createOrder(phone, registrations), 3, 1000);
@@ -125,7 +128,7 @@ export const registerParticipant = [
                     name,
                     usn,
                     phone,
-                    college,
+                    college: decodedCollege, // Use the decoded college name
                     registrations: newRegistrations
                 }], { session });
 
