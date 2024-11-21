@@ -1,5 +1,6 @@
 import Participant from "../models/Participant.js";
 import crypto from "crypto";
+import mongoose from "mongoose";
 import { generateTicket } from "../controllers/ticketGeneration.js";
 
 // Helper function for signature validation
@@ -31,16 +32,11 @@ export const razorpayWebhook = async (req, res) => {
   const { college, name, phone, registrations = [], usn } = notes;
   console.log("Participant data:", { college, name, phone, registrations, usn });
 
-  // Start transaction for atomic operations
-  const session = await Participant.startSession();
-  if (!session) {
-    console.error("Failed to start session");
-    return res.status(500).json({ error: "Failed to start database session" });
-  }
-
-  session.startTransaction();
-
+  let session;
   try {
+    session = await mongoose.startSession();
+    session.startTransaction();
+
     // Find or create participant
     let participant = await Participant.findOne({ phone }).session(session);
     console.log(`Found participant: ${participant ? participant._id : "None"}`);
@@ -126,10 +122,14 @@ export const razorpayWebhook = async (req, res) => {
     console.log(`Payment processed successfully: ${razorpay_payment_id}`);
     return res.status(200).json({ success: true });
   } catch (error) {
-    await session.abortTransaction();
-    session.endSession();
-
-    console.error("Error processing Razorpay webhook:", error.message);
-    return res.status(500).json({ error: "Internal server error" });
+    if (session?.inTransaction()) {
+      await session.abortTransaction();
+    }
+    console.error('Webhook processing error:', error);
+    return res.status(500).json({ message: 'Internal Server Error', error: error.message });
+  } finally {
+    if (session) {
+      await session.endSession();
+    }
   }
 };
