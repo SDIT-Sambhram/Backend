@@ -59,37 +59,37 @@ export const razorpayWebhook = async (req, res) => {
     const isPaid = status === "captured";
     const newRegistrations = [];
 
-    if (isPaid) {
-      const ticketUrl = await generateTicket(
-        participant._id,
-        participant.name,
-        phone,
-        amount / 100,
-        registrations.length,
-        order_id
+    // Use 'for...of' loop instead of 'forEach' for async handling
+    for (const event of registrations) {
+      const event_id = event.event_id;
+      console.log(`Processing registration for event: ${event_id}`);
+
+      const isAlreadyRegistered = participant.registrations.some(
+        (reg) => reg.event_id.toString() === event_id
       );
-      console.log("Generated ticket URL:", ticketUrl);
 
-      registrations.forEach((event) => {
-        const event_id = event.event_id;
-        console.log(`Processing registration for event: ${event_id}`);
+      if (!isAlreadyRegistered) {
+        const ticketUrl = isPaid
+          ? await generateTicket(
+              participant._id,
+              participant.name,
+              phone,
+              amount / 100,
+              registrations.length,
+              order_id
+            )
+          : "failed"; // If payment is not captured, set ticketUrl to "failed"
 
-        const isAlreadyRegistered = participant.registrations.some(
-          (reg) => reg.event_id.toString() === event_id
-        );
-
-        if (!isAlreadyRegistered) {
-          newRegistrations.push({
-            event_id,
-            ticket_url: isPaid ? ticketUrl : "failed",
-            amount: amount / 100,
-            order_id,
-            payment_status: isPaid ? "paid" : "failed",
-            razorpay_payment_id,
-            registration_date: new Date(),
-          });
-        }
-      });
+        newRegistrations.push({
+          event_id,
+          ticket_url: ticketUrl,
+          amount: amount / 100,
+          order_id,
+          payment_status: isPaid ? "paid" : "failed",
+          razorpay_payment_id,
+          registration_date: new Date(),
+        });
+      }
     }
 
     if (newRegistrations.length > 0) {
