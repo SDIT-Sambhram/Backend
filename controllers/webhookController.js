@@ -1,6 +1,7 @@
 import crypto from "crypto";
 import Participant from "../models/Participant.js";
 import { generateTicket } from "../controllers/ticketGeneration.js";
+import { Console } from "console";
 
 // Helper function for signature validation
 const validateSignature = (reqBody, receivedSignature, webhookSecret) => {
@@ -22,9 +23,9 @@ export const razorpayWebhook = async (req, res) => {
     return res.status(400).json({ error: "Invalid signature" });
   }
 
-  const { payment } = req.body;
-  const { entity: paymentData } = payment;
-  const { id: razorpay_payment_id, order_id, amount, status, notes = {} } = paymentData;
+  const { payload } = req.body;
+  Console.log("Webhook payload", payload);
+  const { id: razorpay_payment_id, order_id, amount, status, notes = {} } = payload.payment.entity;
 
   // Early validation of participant details in notes
   const { name, usn, phone, college, registrations } = notes;
