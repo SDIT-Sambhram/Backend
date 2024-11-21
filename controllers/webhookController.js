@@ -1,6 +1,6 @@
 import crypto from "crypto";
-import Participant from "../models/Participant";
-import { generateTicket } from "../utils/ticketGenerator";
+import Participant from "../models/Participant.js";
+import { generateTicket } from "../utils/ticketGenerator.js";
 
 // Helper function for signature validation
 const validateSignature = (reqBody, receivedSignature, webhookSecret) => {
