@@ -12,7 +12,7 @@ const validateSignature = (reqBody, receivedSignature, webhookSecret) => {
   return receivedSignature === expectedSignature;
 };
 
-const razorpayWebhook = async (req, res) => {
+export const razorpayWebhook = async (req, res) => {
   const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET;
 
   // Validate Webhook Signature
