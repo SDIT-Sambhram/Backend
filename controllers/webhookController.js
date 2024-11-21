@@ -1,7 +1,6 @@
 import crypto from "crypto";
 import Participant from "../models/Participant.js";
 import { generateTicket } from "../controllers/ticketGeneration.js";
-import { Console } from "console";
 
 // Helper function for signature validation
 const validateSignature = (reqBody, receivedSignature, webhookSecret) => {
@@ -25,11 +24,14 @@ export const razorpayWebhook = async (req, res) => {
 
   const { payload } = req.body; 
   console.log("Razorpay webhook payload:", payload);
+
+  // Destructure payment details
   const { id: razorpay_payment_id, order_id, amount, status, notes = {} } = payload.payment.entity;
   console.log("Razorpay payment details:", { razorpay_payment_id, order_id, amount, status, notes });
 
   // Early validation of participant details in notes
-  const {college, name,  phone,  registrations, usn } = notes;
+  const { college, name, phone, registrations = [], usn } = notes;
+  console.log("Participant data:", { college, name, phone, registrations, usn });
 
   // Start transaction for atomic operations
   const session = await Participant.startSession();
@@ -38,8 +40,8 @@ export const razorpayWebhook = async (req, res) => {
   try {
     // Find or create participant
     let participant = await Participant.findOne({ phone }).session(session);
+    console.log(`Found participant: ${participant ? participant._id : "None"}`);
 
-    // If participant doesn't exist, create a new one
     if (!participant) {
       participant = new Participant({
         name,
@@ -64,9 +66,13 @@ export const razorpayWebhook = async (req, res) => {
         registrations.length, // Total number of events
         order_id
       );
+      console.log("Generated ticket URL:", ticketUrl);
 
       // Collect new event registrations for the participant
-      registrations.forEach((event_id) => {
+      registrations.forEach((event) => {
+        const event_id = event.event_id; // Assuming the event object contains an event_id field
+        console.log(`Processing registration for event: ${event_id}`);
+
         // Avoid duplicate event registrations
         const isAlreadyRegistered = participant.registrations.some(
           (reg) => reg.event_id.toString() === event_id
@@ -87,6 +93,9 @@ export const razorpayWebhook = async (req, res) => {
     }
 
     // Save participant data with the new registrations
+    if (newRegistrations.length > 0) {
+      participant.registrations.push(...newRegistrations);
+    }
     await participant.save({ session });
     console.log(`Participant data saved for phone: ${phone}`);
 
