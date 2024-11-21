@@ -20,5 +20,5 @@ const ParticipantSchema = new mongoose.Schema({
 });
 
 // Export the model
-const Participant = mongoose.models.Participant || mongoose.model('participant', ParticipantSchema);
+const Participant = mongoose.models.Participant || mongoose.model('Participant', ParticipantSchema);
 export default Participant;
