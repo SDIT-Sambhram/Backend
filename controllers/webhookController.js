@@ -23,8 +23,8 @@ export const razorpayWebhook = async (req, res) => {
     return res.status(400).json({ error: "Invalid signature" });
   }
 
-  const { payload } = req.body;
-  Console.log("Webhook payload", payload);
+  const { payload } = req.body; 
+  console.log("Razorpay webhook payload:", payload);
   const { id: razorpay_payment_id, order_id, amount, status, notes = {} } = payload.payment.entity;
 
   // Early validation of participant details in notes
