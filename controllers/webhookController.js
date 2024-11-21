@@ -65,8 +65,9 @@ export const razorpayWebhook = async (req, res) => {
       console.log(`Processing registration for event: ${event_id}`);
 
       const isAlreadyRegistered = participant.registrations.some(
-        (reg) => reg.event_id.toString() === event_id
+        (reg) => reg.event_id.toString() === event_id && reg.payment_status !== "failed"
       );
+      
 
       if (!isAlreadyRegistered) {
         const ticketUrl = isPaid
