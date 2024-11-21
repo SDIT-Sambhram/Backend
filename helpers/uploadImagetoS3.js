@@ -1,5 +1,6 @@
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 import dotenv from 'dotenv';
+import logger from '../utils/logger';
 
 dotenv.config();
 
@@ -21,20 +22,32 @@ export const uploadImageToS3 = async (fileName, imageBuffer) => {
     ContentType: 'image/png', // Adjust this if your image type varies
   };
 
-  console.log("Uploading image to S3 with the following parameters:");
-  console.log("Bucket:", params.Bucket);
-  console.log("Key (fileName):", params.Key);
-  console.log("Body (imageBuffer type):", typeof params.Body);
+  // Log the start of the upload process
+  logger.info('Starting image upload to S3', {
+    bucket: params.Bucket,
+    key: params.Key,
+    region: process.env.AWS_REGION_,
+  });
 
   try {
     // Use the `PutObjectCommand` to upload to S3
     const command = new PutObjectCommand(params);
     const data = await s3Client.send(command);
+
     const imageUrl = `https://${params.Bucket}.s3.${process.env.AWS_REGION}.amazonaws.com/${fileName}`;
-    console.log('Image uploaded successfully:', imageUrl);
+    logger.info('Image uploaded successfully', {
+      url: imageUrl,
+      bucket: params.Bucket,
+      key: params.Key,
+    });
+
     return imageUrl; // Return the URL of the uploaded image
   } catch (error) {
-    console.error('Error uploading image to S3:', error);
+    logger.error('Error uploading image to S3', {
+      message: error.message,
+      stack: error.stack,
+    });
+
     throw new Error(`Failed to upload image to S3: ${error.message}`);
   }
 };

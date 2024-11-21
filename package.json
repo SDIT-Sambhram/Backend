@@ -24,7 +24,8 @@
     "qrcode": "^1.5.4",
     "razorpay": "^2.9.5",
     "serverless-http": "^3.2.0",
-    "sharp": "^0.33.5"
+    "sharp": "^0.33.5",
+    "winston": "^3.17.0"
   },
   "devDependencies": {
     "mongoose": "^8.8.0"
