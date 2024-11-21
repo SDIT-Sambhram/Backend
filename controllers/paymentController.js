@@ -22,7 +22,7 @@ export const createOrder = async (phone, registrations, usn, name, decodedColleg
         }
         
         const options = {
-            amount: 1 * 100,  // Amount in paise
+            amount: amount * 100,  // Amount in paise
             currency: "INR",
             receipt: `receipt_order_${Date.now()}`,  // Unique identifier for tracking orders
             notes: {

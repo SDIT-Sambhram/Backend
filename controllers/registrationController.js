@@ -4,6 +4,7 @@ import { validateInputs } from "../helpers/validation.js";
 import { validationResult } from "express-validator";
 import he from "he"; // Decode the college name
 import logger from "../utils/logger.js"; // Import logger
+import registrationLimiter from "../middlewares/rateLimiter.js";
 
 const MAX_EVENTS = 4;
 
@@ -40,6 +41,7 @@ const canRegisterForEvents = async (phone, registrations) => {
 export const registerParticipant = [
     // Step 1: Validate user input
     validateInputs,
+    registrationLimiter,
 
     // Main registration logic
     async (req, res) => {
