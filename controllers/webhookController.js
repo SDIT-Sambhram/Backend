@@ -45,6 +45,7 @@ export const razorpayWebhook = async (req, res) => {
   let session;
   try {
     const { payload } = req.body;
+    console.log('Webhook payload:', payload);
     const {
       order_id,
       notes: { phone, registrations: events },
