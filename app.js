@@ -10,7 +10,7 @@ dotenv.config();
 
 // Database config
 connectDB();
-app.set('trust proxy', true);
+
 
 // Initialize express app
 const app = express();
@@ -18,6 +18,7 @@ const app = express();
 // Middleware setup
 app.use(express.json()); // Middleware for parsing JSON data
 app.use(morgan("dev"));   // Logging middleware
+app.set('trust proxy', true);
 
 // Routes
 app.use("/api/v1/auth", authRoutes);
