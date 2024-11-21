@@ -56,7 +56,7 @@ const canRegisterForEvents = (existingRegistrations, newRegistrations) => {
 export const registerParticipant = [
     // Add validation middleware
     validateInputs,
-    registrationLimiter,
+    // registrationLimiter,
     
     // Main registration logic
     async (req, res) => {
