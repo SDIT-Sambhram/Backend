@@ -1,5 +1,5 @@
-import crypto from "crypto";
 import Participant from "../models/Participant.js";
+import crypto from "crypto";
 import { generateTicket } from "../controllers/ticketGeneration.js";
 
 // Helper function for signature validation
@@ -25,16 +25,19 @@ export const razorpayWebhook = async (req, res) => {
   const { payload } = req.body; 
   console.log("Razorpay webhook payload:", payload);
 
-  // Destructure payment details
   const { id: razorpay_payment_id, order_id, amount, status, notes = {} } = payload.payment.entity;
   console.log("Razorpay payment details:", { razorpay_payment_id, order_id, amount, status, notes });
 
-  // Early validation of participant details in notes
   const { college, name, phone, registrations = [], usn } = notes;
   console.log("Participant data:", { college, name, phone, registrations, usn });
 
   // Start transaction for atomic operations
   const session = await Participant.startSession();
+  if (!session) {
+    console.error("Failed to start session");
+    return res.status(500).json({ error: "Failed to start database session" });
+  }
+
   session.startTransaction();
 
   try {
@@ -57,23 +60,20 @@ export const razorpayWebhook = async (req, res) => {
     const newRegistrations = [];
 
     if (isPaid) {
-      // Generate the ticket URL only once (not for each event)
       const ticketUrl = await generateTicket(
         participant._id,
         participant.name,
         phone,
-        amount / 100, // Convert to actual currency
-        registrations.length, // Total number of events
+        amount / 100,
+        registrations.length,
         order_id
       );
       console.log("Generated ticket URL:", ticketUrl);
 
-      // Collect new event registrations for the participant
       registrations.forEach((event) => {
-        const event_id = event.event_id; // Assuming the event object contains an event_id field
+        const event_id = event.event_id;
         console.log(`Processing registration for event: ${event_id}`);
 
-        // Avoid duplicate event registrations
         const isAlreadyRegistered = participant.registrations.some(
           (reg) => reg.event_id.toString() === event_id
         );
@@ -82,7 +82,7 @@ export const razorpayWebhook = async (req, res) => {
           newRegistrations.push({
             event_id,
             ticket_url: isPaid ? ticketUrl : "failed",
-            amount: amount / 100, // Convert to actual currency
+            amount: amount / 100,
             order_id,
             payment_status: isPaid ? "paid" : "failed",
             razorpay_payment_id,
@@ -92,21 +92,19 @@ export const razorpayWebhook = async (req, res) => {
       });
     }
 
-    // Save participant data with the new registrations
     if (newRegistrations.length > 0) {
       participant.registrations.push(...newRegistrations);
     }
+
     await participant.save({ session });
     console.log(`Participant data saved for phone: ${phone}`);
 
-    // Commit the transaction
     await session.commitTransaction();
     session.endSession();
 
     console.log(`Payment processed successfully: ${razorpay_payment_id}`);
     return res.status(200).json({ success: true });
   } catch (error) {
-    // Rollback transaction in case of errors
     await session.abortTransaction();
     session.endSession();
 
