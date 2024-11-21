@@ -29,6 +29,7 @@ export const razorpayWebhook = async (req, res) => {
   const signature = req.headers['x-razorpay-signature'];
 
   if (!signature) {
+    console.error('Missing signature');
     return res.status(400).json({ message: 'Missing signature' });
   }
 
@@ -99,7 +100,7 @@ export const razorpayWebhook = async (req, res) => {
       }
     };
 
-    await retryWithBackoff(async () =>
+    const updateResult = await retryWithBackoff(async () =>
       Participant.updateOne(
         {
           phone,
@@ -112,6 +113,11 @@ export const razorpayWebhook = async (req, res) => {
         }
       )
     );
+
+    if (updateResult.modifiedCount === 0) {
+      console.error('Failed to update registration for order ID:', order_id);
+      throw new Error(`Failed to update registration for order ID: ${order_id}`);
+    }
 
     await session.commitTransaction();
 
