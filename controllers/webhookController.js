@@ -1,137 +1,110 @@
-import crypto from 'crypto';
-import Participant from '../models/Participant.js';
-import mongoose from 'mongoose';
-import dotenv from 'dotenv';
-import { generateTicket } from './ticketGeneration.js';
+import crypto from "crypto";
+import Participant from "../models/Participant";
+import { generateTicket } from "../utils/ticketGenerator";
 
-dotenv.config();
-
-// Retry utility with exponential backoff
-const retryWithBackoff = async (fn, retries = 3, delay = 1000) => {
-  while (retries > 0) {
-    try {
-      return await fn();
-    } catch (error) {
-      if (retries > 1) {
-        console.warn(`Retrying after delay (${delay}ms)...`);
-        await new Promise(resolve => setTimeout(resolve, delay));
-        delay *= 2; // Exponential backoff
-        retries--;
-      } else {
-        throw error; // Exhaust retries
-      }
-    }
-  }
+// Helper function for signature validation
+const validateSignature = (reqBody, receivedSignature, webhookSecret) => {
+  const expectedSignature = crypto
+    .createHmac("sha256", webhookSecret)
+    .update(JSON.stringify(reqBody))
+    .digest("hex");
+  
+  return receivedSignature === expectedSignature;
 };
 
-export const razorpayWebhook = async (req, res) => {
-  const secret = process.env.RAZORPAY_WEBHOOK_SECRET;
-  const signature = req.headers['x-razorpay-signature'];
+const razorpayWebhook = async (req, res) => {
+  const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET;
 
-  if (!signature) {
-    console.error('Missing signature');
-    return res.status(400).json({ message: 'Missing signature' });
+  // Validate Webhook Signature
+  const receivedSignature = req.headers["x-razorpay-signature"];
+  if (!validateSignature(req.body, receivedSignature, webhookSecret)) {
+    console.error("Invalid Razorpay webhook signature");
+    return res.status(400).json({ error: "Invalid signature" });
   }
 
-  const digest = crypto
-    .createHmac('sha256', secret)
-    .update(JSON.stringify(req.body))
-    .digest('hex');
+  const { payment } = req.body;
+  const { entity: paymentData } = payment;
+  const { id: razorpay_payment_id, order_id, amount, status, notes = {} } = paymentData;
 
-  if (digest !== signature) {
-    console.error('Invalid signature');
-    return res.status(400).json({ message: 'Invalid signature' });
+  // Early validation of participant details in notes
+  const { name, usn, phone, college, registrations } = notes;
+  if (!name || !phone || !usn || !college || !Array.isArray(registrations)) {
+    return res.status(400).json({ error: "Incomplete or invalid participant details in notes" });
   }
 
-  let session;
+  // Start transaction for atomic operations
+  const session = await Participant.startSession();
+  session.startTransaction();
+
   try {
-    const { payload } = req.body;
-    console.log('Webhook payload:', payload);
-    const {
-      order_id,
-      notes: { phone, registrations: events },
-      status: paymentStatus,
-      amount
-    } = payload.payment.entity;
+    // Find or create participant
+    let participant = await Participant.findOne({ phone }).session(session);
 
-    if (!order_id || !phone || !events) {
-      console.error('Invalid payload:', req.body);
-      return res.status(400).json({ message: 'Invalid payload' });
-    }
-
-    const price = amount / 100;
-    const isPaid = paymentStatus === 'captured';
-
-    session = await mongoose.startSession();
-    session.startTransaction();
-
-    const participant = await retryWithBackoff(async () =>
-      Participant.findOne(
-        {
-          phone,
-          'registrations.order_id': { $in: [order_id] },
-          'registrations.payment_status': { $in: [null, 'failed'] }
-        },
-        { name: 1, phone: 1, registrations: 1 }
-      ).session(session)
-    );
-
+    // If participant doesn't exist, create a new one
     if (!participant) {
-      console.error('No matching participant or registration found:', { phone, order_id });
-      throw new Error('No matching participant or registration found');
+      participant = new Participant({
+        name,
+        usn,
+        phone,
+        college,
+        registrations: [],
+      });
+      console.log(`New participant created: ${phone}`);
     }
 
-    if (participant.registrations.some(reg => reg.order_id === order_id && reg.payment_status === 'paid')) {
-      console.log('Duplicate webhook detected, skipping...');
-      return res.status(200).json({ message: 'Duplicate webhook' });
-    }
+    const isPaid = status === "captured";
+    const newRegistrations = [];
 
-    const ticketUrl = isPaid
-      ? await retryWithBackoff(() =>
-          generateTicket(participant._id, participant.name, phone, price, events.length, order_id)
-        )
-      : null;
+    if (isPaid) {
+      // Generate the ticket URL only once (not for each event)
+      const ticketUrl = await generateTicket(
+        participant._id,
+        participant.name,
+        phone,
+        amount / 100, // Convert to actual currency
+        registrations.length, // Total number of events
+        order_id
+      );
 
-    const updateOperation = {
-      $set: {
-        'registrations.$[elem].payment_status': isPaid ? 'paid' : 'failed',
-        'registrations.$[elem].registration_date': new Date(),
-        ...(ticketUrl && { 'registrations.$[elem].ticket_url': ticketUrl })
-      }
-    };
+      // Collect new event registrations for the participant
+      registrations.forEach((event_id) => {
+        // Avoid duplicate event registrations
+        const isAlreadyRegistered = participant.registrations.some(
+          (reg) => reg.event_id.toString() === event_id
+        );
 
-    const updateResult = await retryWithBackoff(async () =>
-      Participant.updateOne(
-        {
-          phone,
-          'registrations.order_id': order_id
-        },
-        updateOperation,
-        {
-          session,
-          arrayFilters: [{ 'elem.order_id': order_id }]
+        if (!isAlreadyRegistered) {
+          newRegistrations.push({
+            event_id,
+            ticket_url: isPaid ? ticketUrl : "failed",
+            amount: amount / 100, // Convert to actual currency
+            order_id,
+            payment_status: isPaid ? "paid" : "failed",
+            razorpay_payment_id,
+            registration_date: new Date(),
+          });
         }
-      )
-    );
-
-    if (updateResult.modifiedCount === 0) {
-      console.error('Failed to update registration for order ID:', order_id);
-      throw new Error(`Failed to update registration for order ID: ${order_id}`);
+      });
     }
 
+    // Save participant data with the new registrations
+    await participant.save({ session });
+    console.log(`Participant data saved for phone: ${phone}`);
+
+    // Commit the transaction
     await session.commitTransaction();
+    session.endSession();
 
-    console.log(`Payment ${paymentStatus} processed for order: ${order_id}`);
-    return res.status(200).json({ message: 'Webhook processed successfully' });
+    console.log(`Payment processed successfully: ${razorpay_payment_id}`);
+    return res.status(200).json({ success: true });
   } catch (error) {
-    if (session?.inTransaction()) {
-      await session.abortTransaction();
-    }
-    console.error('Webhook processing error:', error);
-    return res.status(500).json({ message: 'Internal Server Error', error: error.message });
-  } finally {
-    if (session) {
-      await session.endSession();
-    }
+    // Rollback transaction in case of errors
+    await session.abortTransaction();
+    session.endSession();
+
+    console.error("Error processing Razorpay webhook:", error.message);
+    return res.status(500).json({ error: "Internal server error" });
   }
 };
+
+export default { razorpayWebhook };

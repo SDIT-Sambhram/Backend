@@ -6,11 +6,12 @@ const ParticipantSchema = new mongoose.Schema({
    phone: { type: String, required: true, unique: true },
    college: { type: String, required: true },
    registrations: [{
-      event_id: { type: mongoose.Schema.Types.ObjectId, required: true },
+      event_id: { type: mongoose.Schema.Types.ObjectId, required: false },
       ticket_url: { type: String, default: null},
-      amount: { type: Number, required: true },
+      amount: { type: Number, required: false },
       order_id: { type: String, default: null },
-      payment_status: { type: String, enum: ['paid', 'failed'], default: null },
+      payment_status: { type: String, default: null },
+      razorpay_payment_id: { type: String, default: null },
       registration_date: { type: Date, default: Date.now },
    }]
 }, {

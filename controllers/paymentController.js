@@ -2,7 +2,7 @@ import razorpayInstance from "../configs/razorpay.js";
 import crypto from "crypto";
 
 // Create an order
-export const createOrder = async (phone, registrations) => {
+export const createOrder = async (phone, registrations, usn, name, decodedCollege) => {
     try {
         let amount;
 
@@ -26,8 +26,11 @@ export const createOrder = async (phone, registrations) => {
             currency: "INR",
             receipt: `receipt_order_${Date.now()}`,  // Unique identifier for tracking orders
             notes: {
-              phone: phone,
-              registrations: registrations,
+                name: name,
+                usn: usn,
+                phone: phone,
+                college: decodedCollege,
+                registrations: registrations,
             },
           };
 
