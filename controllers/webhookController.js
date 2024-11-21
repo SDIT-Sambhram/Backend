@@ -30,10 +30,6 @@ export const razorpayWebhook = async (req, res) => {
 
   // Early validation of participant details in notes
   const {college, name,  phone,  registrations, usn } = notes;
-  if (!name || !phone || !usn || !college || !Array.isArray(registrations)) {
-    console.log("Incomplete or invalid participant details in notes");
-    return res.status(400).json({ error: "Incomplete or invalid participant details in notes" });
-  }
 
   // Start transaction for atomic operations
   const session = await Participant.startSession();
