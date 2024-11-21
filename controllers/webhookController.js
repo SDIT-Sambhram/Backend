@@ -62,11 +62,11 @@ export const razorpayWebhook = async (req, res) => {
 
       // Check if participant is already registered for this event
       const existingRegistration = participant.registrations.find(
-        (reg) => reg.event_id.toString() === event_id
+        (reg) => reg.event_id.toString() === event_id && reg.payment_status !== 'failed'
       );
 
       if (existingRegistration) {
-        // If registration exists, update the registration even if the previous status was 'failed'
+        // If registration exists and is not failed, update the registration
         existingRegistration.payment_status = isPaid ? "paid" : "failed";
         existingRegistration.razorpay_payment_id = razorpay_payment_id;
         existingRegistration.ticket_url = isPaid
@@ -82,7 +82,7 @@ export const razorpayWebhook = async (req, res) => {
         existingRegistration.registration_date = new Date();
         console.log(`Updated registration for event: ${event_id}`);
       } else {
-        // If no registration exists for this event, create a new registration
+        // If no registration exists for this event or the existing one is failed, create a new registration
         const ticketUrl = isPaid
           ? await generateTicket(
               participant._id,
