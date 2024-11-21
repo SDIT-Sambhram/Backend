@@ -3,6 +3,7 @@ import crypto from "crypto";
 import mongoose from "mongoose";
 import { generateTicket } from "../controllers/ticketGeneration.js";
 
+// Helper function for signature validation
 const validateSignature = (reqBody, receivedSignature, webhookSecret) => {
   const expectedSignature = crypto
     .createHmac("sha256", webhookSecret)
@@ -13,117 +14,122 @@ const validateSignature = (reqBody, receivedSignature, webhookSecret) => {
 };
 
 export const razorpayWebhook = async (req, res) => {
-  console.log("====== Starting Webhook Processing ======");
-  
   const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET;
-  const receivedSignature = req.headers["x-razorpay-signature"];
 
-  // Validate webhook signature
+  // Validate Webhook Signature
+  const receivedSignature = req.headers["x-razorpay-signature"];
   if (!validateSignature(req.body, receivedSignature, webhookSecret)) {
     console.error("Invalid Razorpay webhook signature");
     return res.status(400).json({ error: "Invalid signature" });
   }
 
-  // Acknowledge webhook receipt immediately
-  res.status(200).json({ success: true, message: "Webhook received" });
-
   const { payload } = req.body;
+  console.log("Razorpay webhook payload:", payload);
+
   const { id: razorpay_payment_id, order_id, amount, status, notes = {} } = payload.payment.entity;
-  const { college, name, phone, registrations, usn } = notes;
+  console.log("Razorpay payment details:", { razorpay_payment_id, order_id, amount, status, notes });
 
-  // Debug log all input data
-  console.log("====== Input Validation ======");
-  console.log("MongoDB Connection State:", mongoose.connection.readyState);
-  console.log("Required Fields:", {
-    name: Boolean(name),
-    usn: Boolean(usn),
-    phone: Boolean(phone),
-    college: Boolean(college),
-    registrations: Array.isArray(registrations)
-  });
-  console.log("Data Types:", {
-    name: typeof name,
-    usn: typeof usn,
-    phone: typeof phone,
-    college: typeof college,
-    registrationsType: typeof registrations
-  });
-  console.log("Values:", { name, usn, phone, college, registrations });
+  const { college, name, phone, registrations = [], usn } = notes;
+  console.log("Participant data:", { college, name, phone, registrations, usn });
 
+  let session;
   try {
-    console.log("====== Participant Lookup ======");
-    // Find or create participant with better error handling
-    let participant;
-    try {
-      participant = await Participant.findOne({ phone });
-      console.log("Find Result:", participant ? "Found existing participant" : "No existing participant");
-    } catch (findError) {
-      console.error("Error in findOne:", findError.message);
-      throw findError;
-    }
+    session = await mongoose.startSession();
+    session.startTransaction();
+
+    // Find or create participant
+    let participant = await Participant.findOne({ phone }).session(session);
+    console.log(`Found participant: ${participant ? participant._id : "None"}`);
 
     if (!participant) {
-      console.log("====== Creating New Participant ======");
-      // Validate data before creation
-      if (!name || !usn || !phone || !college) {
-        throw new Error(`Missing required fields: ${JSON.stringify({ name, usn, phone, college })}`);
-      }
+      participant = new Participant({
+        name,
+        usn,
+        phone,
+        college,
+        registrations: [],
+      });
+      console.log(`New participant created: ${phone}`);
+    }
 
-      const participantData = {
-        name: name.trim(),
-        usn: usn.trim(),
-        phone: phone.trim(),
-        college: college.trim(),
-        registrations: []
-      };
+    const isPaid = status === "captured";
+    const newRegistrations = [];
 
-      console.log("Creating participant with data:", participantData);
+    // Use 'for...of' loop instead of 'forEach' for async handling
+    for (const event of registrations) {
+      const event_id = event.event_id;
+      console.log(`Processing registration for event: ${event_id}`);
 
-      try {
-        const newParticipant = new Participant(participantData);
-        
-        // Log validation results
-        const validationError = newParticipant.validateSync();
-        if (validationError) {
-          console.error("Validation Error:", validationError);
-          throw validationError;
-        }
+      // Check if participant is already registered for this event
+      const existingRegistration = participant.registrations.find(
+        (reg) => reg.event_id.toString() === event_id
+      );
 
-        participant = await newParticipant.save();
-        console.log("New participant created:", participant._id);
+      if (existingRegistration && existingRegistration.payment_status !== 'failed') {
+        // If registration exists and is not failed, update the registration
+        existingRegistration.payment_status = isPaid ? "paid" : "failed";
+        existingRegistration.razorpay_payment_id = razorpay_payment_id;
+        existingRegistration.ticket_url = isPaid
+          ? await generateTicket(
+              participant._id,
+              participant.name,
+              phone,
+              amount / 100,
+              registrations.length,
+              order_id
+            )
+          : "failed";
+        existingRegistration.registration_date = new Date();
+        console.log(`Updated registration for event: ${event_id}`);
+      } else {
+        // If no registration exists for this event or the existing one is failed, create a new registration
+        const ticketUrl = isPaid
+          ? await generateTicket(
+              participant._id,
+              participant.name,
+              phone,
+              amount / 100,
+              registrations.length,
+              order_id
+            )
+          : "failed"; // If payment is not captured, set ticketUrl to "failed"
 
-        // Verify creation
-        const verifyParticipant = await Participant.findById(participant._id);
-        if (!verifyParticipant) {
-          throw new Error("Participant creation verification failed");
-        }
-        console.log("Participant creation verified");
-      } catch (saveError) {
-        console.error("Save Error:", {
-          message: saveError.message,
-          name: saveError.name,
-          errors: saveError.errors,
-          code: saveError.code // This will show 11000 if it's a duplicate key error
+        newRegistrations.push({
+          event_id,
+          ticket_url: ticketUrl,
+          amount: amount / 100,
+          order_id,
+          payment_status: isPaid ? "paid" : "failed",
+          razorpay_payment_id,
+          registration_date: new Date(),
         });
-        throw saveError;
+        console.log(`New registration created for event: ${event_id}`);
       }
     }
 
-    // Rest of your existing code...
-    // Process registrations and save them...
-
-    console.log("====== Webhook Processing Complete ======");
-
-  } catch (error) {
-    console.error("====== Error in Webhook Processing ======");
-    console.error("Error Type:", error.constructor.name);
-    console.error("Error Message:", error.message);
-    console.error("Error Stack:", error.stack);
-    if (error.code === 11000) {
-      console.error("Duplicate key error - phone number already exists");
+    // Add new registrations to the participant's registrations array
+    if (newRegistrations.length > 0) {
+      participant.registrations.push(...newRegistrations);
     }
-    if (error.errors) {
-      console.error("Validation Errors:", JSON.stringify(error.errors, null, 2));
+
+    // Save participant with updated registrations
+    await participant.save({ session });
+    console.log(`Participant data saved for phone: ${phone}`);
+
+    await session.commitTransaction();
+    session.endSession();
+
+    console.log(`Payment processed successfully: ${razorpay_payment_id}`);
+    return res.status(200).json({ success: true });
+  } catch (error) {
+    if (session?.inTransaction()) {
+      await session.abortTransaction();
+    }
+    console.error('Webhook processing error:', error);
+    return res.status(500).json({ message: 'Internal Server Error', error: error.message });
+  } finally {
+    if (session) {
+      await session.endSession();
     }
   }
 };
