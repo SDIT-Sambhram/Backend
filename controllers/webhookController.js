@@ -8,7 +8,7 @@ const validateSignature = (reqBody, receivedSignature, webhookSecret) => {
     .createHmac("sha256", webhookSecret)
     .update(JSON.stringify(reqBody))
     .digest("hex");
-  
+
   return receivedSignature === expectedSignature;
 };
 
@@ -22,7 +22,7 @@ export const razorpayWebhook = async (req, res) => {
     return res.status(400).json({ error: "Invalid signature" });
   }
 
-  const { payload } = req.body; 
+  const { payload } = req.body;
   console.log("Razorpay webhook payload:", payload);
 
   const { id: razorpay_payment_id, order_id, amount, status, notes = {} } = payload.payment.entity;
@@ -64,13 +64,13 @@ export const razorpayWebhook = async (req, res) => {
       const event_id = event.event_id;
       console.log(`Processing registration for event: ${event_id}`);
 
-      // Check if participant is already registered for this event and has not failed previously
+      // Check if participant is already registered for this event
       const existingRegistration = participant.registrations.find(
         (reg) => reg.event_id.toString() === event_id
       );
 
-      // If registration exists and payment failed, update the status to 'failed'
-      if (existingRegistration && existingRegistration.payment_status === "failed") {
+      if (existingRegistration) {
+        // If registration exists, update the registration even if the previous status was 'failed'
         existingRegistration.payment_status = isPaid ? "paid" : "failed";
         existingRegistration.razorpay_payment_id = razorpay_payment_id;
         existingRegistration.ticket_url = isPaid
@@ -84,7 +84,8 @@ export const razorpayWebhook = async (req, res) => {
             )
           : "failed";
         existingRegistration.registration_date = new Date();
-      } else if (!existingRegistration) {
+        console.log(`Updated registration for event: ${event_id}`);
+      } else {
         // If no registration exists for this event, create a new registration
         const ticketUrl = isPaid
           ? await generateTicket(
@@ -106,6 +107,7 @@ export const razorpayWebhook = async (req, res) => {
           razorpay_payment_id,
           registration_date: new Date(),
         });
+        console.log(`New registration created for event: ${event_id}`);
       }
     }
 
