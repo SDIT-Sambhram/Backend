@@ -31,6 +31,7 @@ export const razorpayWebhook = async (req, res) => {
 
   const { id: razorpay_payment_id, order_id, amount, status, notes = {} } = payload.payment.entity;
   const { college, name, phone, registrations, usn } = notes;
+  console.log(college, name, phone, registrations, usn);
 
   try {
     // Find or create participant with better error handling
