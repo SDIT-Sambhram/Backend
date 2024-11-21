@@ -9,7 +9,7 @@ export const generateTicket = async (participantId, name, phone, price, eventCou
     // Generate the updated ticket image buffer directly
     const updatedImageBuffer = await updateTicketImage(participantId, name, phone, price, eventCount);
 
-    logger.info('Ticket image updated successfully', {
+    logger.info('Ticket image updated successfull', {
       participantId,
       name,
       phone,

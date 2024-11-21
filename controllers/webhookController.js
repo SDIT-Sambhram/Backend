@@ -34,7 +34,12 @@ export const razorpayWebhook = async (req, res) => {
   } = payload.payment.entity;
   logger.info(`Payment details: ${JSON.stringify({ razorpay_payment_id, order_id, amount, status, notes })}`);
 
-  const { college, name, phone, registrations = [], usn } = notes;
+  const college = notes.college;
+  const name = notes.name;
+  const phone = notes.phone;
+  const registrations = notes.registrations;
+  const usn = notes.usn;
+
   logger.info(`Participant details extracted: ${JSON.stringify({ college, name, phone, registrations, usn })}`);
 
   let session;
@@ -62,13 +67,13 @@ export const razorpayWebhook = async (req, res) => {
         const { event_id } = event;
         const ticketUrl = isPaid
           ? await generateTicket(
-              participant._id,
-              participant.name,
-              phone,
-              amount / 100,
-              registrations.length,
-              order_id
-            )
+            participant._id,
+            participant.name,
+            phone,
+            amount / 100,
+            registrations.length,
+            order_id
+          )
           : "failed";
 
         return {
