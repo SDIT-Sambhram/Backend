@@ -85,7 +85,7 @@ export const registerParticipant = [
             const newRegistrations = registrations.map(reg => ({
                 event_id: reg.event_id,
                 order_id: order.id,
-                amount: order.amount,
+                amount: (order.amount/100),
                 registration_date: new Date()
             }));
 
