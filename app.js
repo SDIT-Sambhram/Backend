@@ -4,7 +4,7 @@ import morgan from "morgan";
 import connectDB from "./configs/db.js";
 import authRoutes from "./routes/authRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
-// import serverless from "serverless-http"; // Import serverless-http
+import serverless from "serverless-http"; // Import serverless-http
 
 // Config dotenv
 dotenv.config();
@@ -25,11 +25,7 @@ app.set('trust proxy', true);
 app.use("/api/v1/auth", authRoutes);
 app.use('/api/admin', adminRoutes);
 
-const PORT = process.env.PORT || 8081;
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
 
 // Root endpoint
 app.get("/", (request, response) => {
@@ -39,5 +35,5 @@ app.get("/", (request, response) => {
 
 
 // Export the app as a Lambda-compatible handler
-// export const handler = serverless(app);
+export const handler = serverless(app);
 export default app;
