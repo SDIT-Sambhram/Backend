@@ -16,5 +16,5 @@ const spotParticipantSchema = new mongoose.Schema({
 });
 
 // Export the model
-const spotParticipant = mongoose.models.spotParticipant|| mongoose.model('spotParticipant', spotParticipantSchema);
+const spotParticipant = mongoose.models.spotParticipant || mongoose.model('spotParticipant', spotParticipantSchema);
 export default spotParticipant;

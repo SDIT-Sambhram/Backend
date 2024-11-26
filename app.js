@@ -25,7 +25,11 @@ app.set('trust proxy', true);
 app.use("/api/v1/auth", authRoutes);
 app.use('/api/admin', adminRoutes);
 
+const PORT = process.env.PORT ;
 
+// app.listen(PORT, () => {
+//     console.log(`Server Running on ${PORT}`);
+// })
 
 // Root endpoint
 app.get("/", (request, response) => {

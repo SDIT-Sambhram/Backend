@@ -12,8 +12,8 @@ router.get('/events', getAllEventDetails);  // Get all events with caching
 
 // Payment routes
 router.post('/payment', registerParticipant);
-router.post('/payment/webhooks', express.json({ 
-    verify: (req, res, buf) => { req.rawBody = buf; } 
+router.post('/payment/webhooks', express.json({
+    verify: (req, res, buf) => { req.rawBody = buf; }
 }), razorpayWebhook);
 
 // Note: Your ticket route is incomplete

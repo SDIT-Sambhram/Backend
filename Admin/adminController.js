@@ -1,15 +1,19 @@
 import Event from '../models/eventModel.js';
 import spotParticipant from '../models/spotParticipant.js';
 import Participant from '../models/Participant.js';
-import admin from '../models/mainAdmin.js';
 import jwt from 'jsonwebtoken';
 import NodeCache from 'node-cache';
 import { rateLimit } from 'express-rate-limit';
 import expressValidator from 'express-validator';
 import { readFile } from 'fs/promises';
 import { join } from 'path';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
 
 const { check, validationResult } = expressValidator;
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 // Rate limiting middleware with fixed configuration
 export const loginLimiter = rateLimit({
@@ -93,20 +97,9 @@ const asyncHandler = (fn) => (req, res, next) => {
     Promise.resolve(fn(req, res, next)).catch((error) => handleError(res, error));
 };
 
-// Update admin data loading function with correct path
-const loadAdminData = async () => {
-    try {
-        // Fix path to point to adminData.json in Downloads
-        const adminDataPath = 'C:/Users/CS Wizard/Downloads/adminData.json';
-        const data = await readFile(adminDataPath, 'utf8');
-        return JSON.parse(data);
-    } catch (error) {
-        console.error('Error reading admin data:', error);
-        throw new Error(`Failed to load admin data: ${error.message}`);
-    }
-};
+// Remove the loadAdminData function as it's no longer needed
 
-// Simplified login handler
+// Update login handler
 export const adminLogin = [
     validateLogin,
     loginLimiter,
@@ -114,32 +107,16 @@ export const adminLogin = [
         try {
             const { contact, password, name } = sanitizeInput(req.body);
             
-            // Debug log
-            console.log('Login attempt received:', {
-                name,
-                contact,
-                passwordLength: password?.length
-            });
+            // Read admin data from JSON file
+            const adminDataPath = join(__dirname, 'adminData.json');
+            const adminList = JSON.parse(await readFile(adminDataPath, 'utf8'));
 
-            const adminList = await loadAdminData();
-            console.log('Admin list loaded, count:', adminList.length);
-
-            const numericContact = parseInt(contact);
-            
-            // Find admin with exact matches
-            const adminData = adminList.find(admin => {
-                console.log('Checking admin:', {
-                    storedName: admin.name,
-                    storedPhone: admin.phone,
-                    nameMatch: admin.name === name,
-                    phoneMatch: admin.phone === numericContact,
-                    passwordMatch: admin.password === password
-                });
-                
-                return admin.name === name && 
-                       admin.phone === numericContact && 
-                       admin.password === password;
-            });
+            // Find admin in JSON data
+            const adminData = adminList.find(admin => 
+                admin.name === name && 
+                admin.phone === parseInt(contact) &&
+                admin.password === password
+            );
 
             if (!adminData) {
                 return handleError(res, {
@@ -155,7 +132,7 @@ export const adminLogin = [
                     role: 'admin',
                     iat: Date.now()
                 },
-                process.env.JWT_SECRET || 'your-secret-key', // Fallback secret
+                process.env.JWT_SECRET || 'your-secret-key',
                 { expiresIn: '12h' }
             );
 
