@@ -1,19 +1,13 @@
-import Event from '../models/eventModel.js';
 import spotParticipant from '../models/spotParticipant.js';
 import Participant from '../models/Participant.js';
 import jwt from 'jsonwebtoken';
 import NodeCache from 'node-cache';
 import { rateLimit } from 'express-rate-limit';
 import expressValidator from 'express-validator';
-import { readFile } from 'fs/promises';
-import { join } from 'path';
-import { fileURLToPath } from 'url';
-import { dirname } from 'path';
+import Admin from '../models/mainAdmin.js';
 
 const { check, validationResult } = expressValidator;
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
 
 // Rate limiting middleware with fixed configuration
 export const loginLimiter = rateLimit({
@@ -106,25 +100,33 @@ export const adminLogin = [
     asyncHandler(async (req, res) => {
         try {
             const { contact, password, name } = sanitizeInput(req.body);
-            
-            // Read admin data from JSON file
-            const adminDataPath = join(__dirname, 'adminData.json');
-            const adminList = JSON.parse(await readFile(adminDataPath, 'utf8'));
 
-            // Find admin in JSON data
-            const adminData = adminList.find(admin => 
-                admin.name === name && 
-                admin.phone === parseInt(contact) &&
-                admin.password === password
-            );
+            console.log('Login data:', { contact, password, name });
+
+            // Find admin in the database
+            const adminData = await Admin.findOne({ 
+                name: name.trim(),
+                phone: contact
+            }).select('+password');
 
             if (!adminData) {
+                console.log('Admin not found', { contact});
                 return handleError(res, {
                     message: 'Invalid credentials',
                     code: 'AUTH_FAILED'
                 }, 401);
             }
 
+            // Check if the password is correct
+            if (password !== adminData.password) {
+                console.log('Incorrect password', { contact});
+                return handleError(res, {
+                    message: 'Invalid credentials',
+                    code: 'AUTH_FAILED'
+                }, 401);
+            }
+
+            // Generate JWT token
             const token = jwt.sign(
                 {
                     name: adminData.name,
@@ -135,6 +137,7 @@ export const adminLogin = [
                 process.env.JWT_SECRET || 'your-secret-key',
                 { expiresIn: '12h' }
             );
+            console.log('Login successful', { name });
 
             return sendResponse(res, {
                 message: 'Login successful',
