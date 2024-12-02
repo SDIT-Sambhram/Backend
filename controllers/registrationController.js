@@ -12,7 +12,7 @@ const MAX_EVENTS = 4;
 const canRegisterForEvents = async (phone, registrations) => {
     const existingParticipant = await Participant.findOne(
         { phone },
-        { 'registrations.event_id': 1, 'registrations.payment_status': 1 }
+        { 'registrations.event_id': 1, 'registrations.payment_status': 1 }  
     );
 
     if (!existingParticipant) return { canRegister: true };

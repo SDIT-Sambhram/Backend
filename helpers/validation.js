@@ -17,7 +17,7 @@ export const validateInputs = [
         .trim()
         .notEmpty()
         .withMessage('USN is required')
-        .isLength({ min: 4 })
+        .isLength({ min: 2 })
         .withMessage('USN must be at least 4 characters long'),
 
     // Validate 'phone' field
