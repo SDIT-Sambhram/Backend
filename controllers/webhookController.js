@@ -3,6 +3,16 @@ import crypto from "crypto";
 import mongoose from "mongoose";
 import { generateTicket } from "../controllers/ticketGeneration.js";
 
+// Helper function for signature validation
+const validateSignature = (reqBody, receivedSignature, webhookSecret) => {
+  const expectedSignature = crypto
+    .createHmac("sha256", webhookSecret)
+    .update(JSON.stringify(reqBody))
+    .digest("hex");
+
+  return receivedSignature === expectedSignature;
+};
+
 export const razorpayWebhook = async (req, res) => {
   const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET;
 
