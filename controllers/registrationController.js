@@ -41,7 +41,7 @@ const canRegisterForEvents = async (phone, registrations) => {
 export const registerParticipant = [
     // Step 1: Validate user input
     validateInputs,
-    registrationLimiter,
+    // registrationLimiter,
 
     // Main registration logic
     async (req, res) => {
