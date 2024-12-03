@@ -5,9 +5,10 @@ const spotParticipantSchema = new mongoose.Schema({
    usn: { type: String, required: true },
    phone: { type: String, required: true, unique: true },
    college: { type: String, required: true },
-   amount: { type: Number, required: false },
    registrations: [{
       event_id: { type: mongoose.Schema.Types.ObjectId, required: false },
+      amount: { type: Number, required: false },
+      payment_status: { type: String, required: false },
       registration_date: { type: Date, default: Date.now },
    }]
 }, {

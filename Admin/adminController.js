@@ -164,22 +164,6 @@ export const createParticipant = asyncHandler(async (req, res) => {
     const sanitizedData = sanitizeInput(req.body);
     const { name, usn, phone, college, registrations } = sanitizedData;
 
-    let amount;
-
-        const eventLength = registrations.length;
-
-        const eventPricing = {
-            1: 100,
-            2: 160,
-            3: 220,
-            4: 250
-        };
-        if (eventLength in eventPricing) {
-            amount = eventPricing[eventLength];
-        } else {
-            console.log("You can't have more than 4 events");
-        }
-
     if (!name || !usn || !phone || !college || !registrations) {
         return handleError(res, new Error('All fields are required'), 400);
     }
@@ -188,7 +172,7 @@ export const createParticipant = asyncHandler(async (req, res) => {
     cache.del('all_participants');
 
     const newParticipant = await spotParticipant.create({
-        name, usn, phone, college, amount, registrations
+        name, usn, phone, college, registrations
     }).catch(error => {
         if (error.code === 11000) {
             throw new Error('Duplicate entry found');
