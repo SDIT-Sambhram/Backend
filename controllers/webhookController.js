@@ -51,6 +51,8 @@ export const razorpayWebhook = async (req, res) => {
       return res.status(200).json({ success: true, message: "Order already processed" });
     }
 
+    const MAX_EVENTS = 4;
+
     // Find or create participant
     let participant = await Participant.findOne({ phone }).session(session);
 
@@ -64,11 +66,31 @@ export const razorpayWebhook = async (req, res) => {
       });
     }
 
+    // Count current valid registrations
+    const currentValidRegistrations = participant.registrations.filter(
+      reg => reg.payment_status === 'paid'
+    ).length;
+
+    // Calculate remaining event slots
+    const remainingSlots = MAX_EVENTS - currentValidRegistrations;
+
+    if (remainingSlots <= 0) {
+      console.warn(`Maximum event registration limit reached for participant: ${phone}`);
+      await session.commitTransaction();
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Maximum event registration limit reached' 
+      });
+    }
+
     const isPaid = status === "captured";
     const newRegistrations = [];
 
     for (const event of registrations) {
       const event_id = event.event_id;
+
+      // Stop if no remaining slots
+      if (newRegistrations.length >= remainingSlots) break;
 
       // Check for duplicate registration within existing registrations, ignoring failed events
       const isDuplicateRegistration = participant.registrations.some(
