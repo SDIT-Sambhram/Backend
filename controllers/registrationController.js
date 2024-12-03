@@ -9,7 +9,7 @@ import registrationLimiter from "../middlewares/rateLimiter.js";
 const MAX_EVENTS = 4;
 
 // Check if user can register based on their previous registrations
-const canRegisterForEvents = async (phone, registrations) => {
+const canRegisterForEvents = async (phone, newRegistrations) => {
     const existingParticipant = await Participant.findOne(
         { phone },
         { 'registrations.event_id': 1, 'registrations.payment_status': 1 }  
@@ -17,22 +17,38 @@ const canRegisterForEvents = async (phone, registrations) => {
 
     if (!existingParticipant) return { canRegister: true };
 
+    // Filter active registrations (paid or in-process)
     const activeRegistrations = existingParticipant.registrations.filter(
         reg => reg.payment_status !== 'failed' && reg.payment_status !== null
     );
 
-    if (activeRegistrations.length >= MAX_EVENTS) {
-        logger.warn(`User with phone ${phone} exceeds the maximum event registration limit.`);
-        return { canRegister: false, message: `User can register for up to ${MAX_EVENTS} unique events` };
+    // Combine existing and new unique event IDs
+    const existingEventIds = new Set(activeRegistrations.map(reg => reg.event_id.toString()));
+    const newEventIds = new Set(newRegistrations.map(reg => reg.event_id.toString()));
+
+    // Total unique events after combining
+    const totalUniqueEvents = new Set([...existingEventIds, ...newEventIds]);
+
+    // Check total unique events against max limit
+    if (totalUniqueEvents.size > MAX_EVENTS) {
+        logger.warn(`User with phone ${phone} would exceed the maximum event registration limit.`);
+        return { 
+            canRegister: false, 
+            message: `User can register for up to ${MAX_EVENTS} unique events` 
+        };
     }
 
-    const existingEventIds = new Set(activeRegistrations.map(reg => reg.event_id.toString()));
+    // Check for duplicate events in new registrations
+    const duplicateNewEvents = newRegistrations.some(reg => 
+        existingEventIds.has(reg.event_id.toString())
+    );
 
-    for (const reg of registrations) {
-        if (existingEventIds.has(reg.event_id.toString())) {
-            logger.warn(`User with phone ${phone} has already registered for event ID ${reg.event_id}`);
-            return { canRegister: false, message: 'User has already registered for one or more of these events' };
-        }
+    if (duplicateNewEvents) {
+        logger.warn(`User with phone ${phone} has already registered for one or more of these events`);
+        return { 
+            canRegister: false, 
+            message: 'User has already registered for one or more of these events' 
+        };
     }
 
     return { canRegister: true };
