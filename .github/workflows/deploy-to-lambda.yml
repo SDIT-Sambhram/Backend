@@ -1,51 +1,51 @@
-name: Deploy Lambda Function
+# name: Deploy Lambda Function
 
-on:
-  push:
-    branches:
-      - main
+# on:
+#   push:
+#     branches:
+#       - main
 
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
+# jobs:
+#   deploy:
+#     runs-on: ubuntu-latest
 
-    steps:
-      # Checkout the code from GitHub repository
-      - name: Checkout code
-        uses: actions/checkout@v2
+#     steps:
+#       # Checkout the code from GitHub repository
+#       - name: Checkout code
+#         uses: actions/checkout@v2
 
-      # Set up Node.js for the project
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '20'
+#       # Set up Node.js for the project
+#       - name: Set up Node.js
+#         uses: actions/setup-node@v3
+#         with:
+#           node-version: '20'
 
-      # Install dependencies with npm ci for clean, consistent install
-      - name: Install Dependencies
-        run: npm ci
+#       # Install dependencies with npm ci for clean, consistent install
+#       - name: Install Dependencies
+#         run: npm ci
 
-      # Create a zip file for Lambda deployment (excludes .git folder)
-      - name: Create ZIP file for Lambda function
-        run: |
-          zip -r code.zip . -x ".git/*"
+#       # Create a zip file for Lambda deployment (excludes .git folder)
+#       - name: Create ZIP file for Lambda function
+#         run: |
+#           zip -r code.zip . -x ".git/*"
 
-      # Upload the ZIP file to S3
-      - name: Upload ZIP to S3
-        run: |
-          aws s3 cp code.zip s3://sambhram-backend/code.zip
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_DEFAULT_REGION: ${{ secrets.AWS_REGION }}
+#       # Upload the ZIP file to S3
+#       - name: Upload ZIP to S3
+#         run: |
+#           aws s3 cp code.zip s3://sambhram-backend/code.zip
+#         env:
+#           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+#           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+#           AWS_DEFAULT_REGION: ${{ secrets.AWS_REGION }}
 
-      # Deploy to AWS Lambda using the S3 object
-      - name: Deploy to AWS Lambda (via S3)
-        run: |
-          aws lambda update-function-code \
-            --function-name arn:aws:lambda:ap-south-1:577638369990:function:sambhram-backend \
-            --s3-bucket sambhram-backend \
-            --s3-key code.zip
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_DEFAULT_REGION: ${{ secrets.AWS_REGION }}
+#       # Deploy to AWS Lambda using the S3 object
+#       - name: Deploy to AWS Lambda (via S3)
+#         run: |
+#           aws lambda update-function-code \
+#             --function-name arn:aws:lambda:ap-south-1:577638369990:function:sambhram-backend \
+#             --s3-bucket sambhram-backend \
+#             --s3-key code.zip
+#         env:
+#           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+#           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+#           AWS_DEFAULT_REGION: ${{ secrets.AWS_REGION }}
