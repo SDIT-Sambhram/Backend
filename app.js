@@ -4,7 +4,6 @@ import morgan from "morgan";
 import connectDB from "./configs/db.js";
 import authRoutes from "./routes/authRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
-import serverless from "serverless-http"; // Import serverless-http
 
 // Config dotenv
 dotenv.config();
@@ -27,15 +26,16 @@ app.use('/api/admin', adminRoutes);
 
 
 
-// app.listen(PORT, () => {
-//     console.log(`Server Running on ${PORT}`);
-// })
+
 
 // Root endpoint
 app.get("/", (request, response) => {
     response.send("Server is up and running");
 });
 
-// Export the app as a Lambda-compatible handler
-export const handler = serverless(app);
+
+app.listen(PORT, () => {
+    console.log(`Server Running on ${PORT}`);
+})
+
 export default app;
