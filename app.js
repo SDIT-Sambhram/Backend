@@ -24,10 +24,6 @@ app.set('trust proxy', true);
 app.use("/api/v1/auth", authRoutes);
 app.use('/api/admin', adminRoutes);
 
-
-
-
-
 // Root endpoint
 app.get("/", (request, response) => {
     response.send("Server is up and running");
